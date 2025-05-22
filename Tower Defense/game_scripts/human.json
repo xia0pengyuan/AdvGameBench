@@ -1,0 +1,58 @@
+{
+    "humans": [
+      {
+        "name": "IceSoldier",
+        "x": 2,
+        "y": 2,
+        "spawn_time": 0
+      },
+      {
+        "name": "FlamethrowerSoldier",
+        "x": 2,
+        "y": 1,
+        "spawn_time": 0
+      },
+      {
+        "name": "MachineGunSoldier",
+        "x": 1,
+        "y": 2,
+        "spawn_time": 0
+      },
+      {
+        "name": "RifleSoldier",
+        "x": 1,
+        "y": 1,
+        "spawn_time": 0
+      },
+      {
+        "name": "RifleSoldier",
+        "x": 1,
+        "y": 3,
+        "spawn_time": 0
+      },
+      {
+        "name": "EnhancedShieldSoldier",
+        "x": 3,
+        "y": 2,
+        "spawn_time": 0
+      },
+      {
+        "name": "EnhancedShieldSoldier",
+        "x": 3,
+        "y": 1,
+        "spawn_time": 0
+      },
+      {
+        "name": "HandgunSoldier",
+        "x": 1,
+        "y": 0,
+        "spawn_time": 0
+      },
+      {
+        "name": "HandgunSoldier",
+        "x": 1,
+        "y": 4,
+        "spawn_time": 0
+      }
+    ]
+  }

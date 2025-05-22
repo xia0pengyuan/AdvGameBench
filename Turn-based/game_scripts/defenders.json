@@ -1,0 +1,32 @@
+{
+  "defenders": [
+    {
+      "name": "RockBeetle",
+      "tier": "Bronze"
+    },
+    {
+      "name": "StoneWarrior",
+      "tier": "Bronze"
+    },
+    {
+      "name": "MountainGiant",
+      "tier": "Bronze"
+    },
+    {
+      "name": "AncientTreant",
+      "tier": "Bronze"
+    },
+    {
+      "name": "Paladin",
+      "tier": "Gold"
+    },
+    {
+      "name": "Sapling",
+      "tier": "Bronze"
+    },
+    {
+      "name": "ForestSeer",
+      "tier": "Bronze"
+    }
+  ]
+}

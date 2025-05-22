@@ -1,0 +1,46 @@
+{
+    "demons": [
+      {
+        "type": "ShieldBreakerDemon",
+        "x": 11,
+        "y": 1,
+        "spawn_time": 0
+      },
+      {
+        "type": "ShieldBreakerDemon",
+        "x": 11,
+        "y": 2,
+        "spawn_time": 0
+      },
+      {
+        "type": "ShieldBreakerDemon",
+        "x": 11,
+        "y": 1,
+        "spawn_time": 5000
+      },
+      {
+        "type": "ShieldBreakerDemon",
+        "x": 11,
+        "y": 2,
+        "spawn_time": 5000
+      },
+      {
+        "type": "FlyingDemon",
+        "x": 11,
+        "y": 0,
+        "spawn_time": 0
+      },
+      {
+        "type": "FlyingDemon",
+        "x": 11,
+        "y": 3,
+        "spawn_time": 0
+      },
+      {
+        "type": "FlyingDemon",
+        "x": 11,
+        "y": 4,
+        "spawn_time": 0
+      }
+    ]
+  }

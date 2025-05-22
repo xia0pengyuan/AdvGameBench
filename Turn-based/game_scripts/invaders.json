@@ -1,0 +1,38 @@
+{
+  "invaders": [
+    {
+      "name": "FireLizard",
+      "tier": "Bronze"
+    },
+    {
+      "name": "FireLizard",
+      "tier": "Bronze"
+    },
+    {
+      "name": "FireLizard",
+      "tier": "Bronze"
+    },
+    {
+      "name": "FireLizard",
+      "tier": "Bronze"
+    },
+    {
+      "name": "FireLizard",
+      "tier": "Bronze"
+    },
+    {
+      "name": "FireLizard",
+      "tier": "Bronze"
+    },
+    {
+      "name": "FireLizard",
+      "tier": "Gold"
+    }
+  ],
+  "target_priority_for_invaders": [
+    "RockBeetle",
+    "StoneWarrior",
+    "MountainGiant",
+    "AncientTreant"
+  ]
+}
