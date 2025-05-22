@@ -1,0 +1,16 @@
+{
+    "demons": [
+      {
+        "type": "NormalDemon",
+        "x": 11,
+        "y": 1,
+        "spawn_time": 0
+      },
+      {
+        "type": "NormalDemon",
+        "x": 11,
+        "y": 2,
+        "spawn_time": 0
+      }
+    ]
+  }

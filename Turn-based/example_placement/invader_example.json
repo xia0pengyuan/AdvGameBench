@@ -1,0 +1,11 @@
+{
+  "invaders": [
+    {
+      "name": "FireLizard",
+      "tier": "Bronze"
+    }
+  ],
+  "target_priority_for_invaders": [
+    "RockBeetle"
+  ]
+}

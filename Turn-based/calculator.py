@@ -1,7 +1,6 @@
 import re
 import prompt as p
 
-import re
 
 def extract_costs(info_text):
     """

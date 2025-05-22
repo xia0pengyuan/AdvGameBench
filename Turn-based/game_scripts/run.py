@@ -4,7 +4,6 @@ import minions as m
 import constants as c
 import board as b
 import sys
-import os
 import prompt as p
 import re
 

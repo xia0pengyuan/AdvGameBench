@@ -1,7 +1,6 @@
 import pygame
 import constants as c
 import sys
-import time
 
 class Demon(pygame.sprite.Sprite):
     def __init__(self, pos, name="NormalDemon", health=10, speed=2):

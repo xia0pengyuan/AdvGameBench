@@ -1,0 +1,16 @@
+{
+    "humans": [
+      {
+        "name": "HandgunSoldier",
+        "x": 1,
+        "y": 0,
+        "spawn_time": 0
+      },
+      {
+        "name": "HandgunSoldier",
+        "x": 1,
+        "y": 1,
+        "spawn_time": 0
+      }
+    ]
+  }

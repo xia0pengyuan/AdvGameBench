@@ -1,0 +1,11 @@
+{
+  "defenders": [
+    {
+      "name": "RockBeetle",
+      "tier": "Bronze"
+    }
+  ],
+    "target_priority_for_defenders": [
+    "FireLizard"
+  ]
+}

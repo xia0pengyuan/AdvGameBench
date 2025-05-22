@@ -1,38 +1,74 @@
 import os
+import sys
 import json
+import re
+# Ensure project root is on PYTHONPATH for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import prompt as p
 from calculator import budget_calculator
-import LLMs
+import LLMs as llms
+
+# Load model lists from environment
+primary_models = json.loads(os.getenv('MODELS', '[]'))
+fixed_models = json.loads(os.getenv('FIX_MODELS', '[]'))
+if not primary_models:
+    raise RuntimeError('No MODELS provided in environment')
+
+# Combine and dedupe models for init stage
+models = list(dict.fromkeys(primary_models + fixed_models))
 
 # Budget constants
 DEFENDER_BUDGET = 20
 INVADER_BUDGET = 20
 
-OUTPUT_DIR = 'initial_placements/'
+# Paths
+BASE_DIR = os.path.dirname(__file__)
+EXAMPLE_DIR = os.path.join(BASE_DIR, 'example_placement')
+OUTPUT_DIR = os.path.join(BASE_DIR, 'initial_placements')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-MODELS = ['gemini-2.5-flash','llama-3-70B']
-
 MODEL_CALLERS = {
-    'chatgpt-o3':        LLMs.call_chatgpt_o3_api,
-    'chatgpt-4o':        LLMs.call_chatgpt_4o_api,
-    'deepSeek-V3':       LLMs.call_deepseek_V3_api,
-    'deepSeek-R1':       LLMs.call_deepseek_R1_api,
-    'qwen-max':          LLMs.call_qwen_max_api,
-    'qwen-plus':         LLMs.call_qwen_plus_api,
-    'claude-3-5-sonnet': LLMs.call_claude_35_sonnet_api,
-    'chatgpt-o3-mini':   LLMs.call_chatgpt_o3_mini_api,
-    'chatgpt-4.1':       LLMs.call_chatgpt_41_api,
-    'gemini-2-flash':    LLMs.call_gemini_2_flash_api,
-    'gemini-2.5-flash':  LLMs.call_gemini_2_5_flash_api,
-    'llama-3-70B':       LLMs.call_meta_llama_70B_api
+    'chatgpt-o3':        llms.call_chatgpt_o3_api,
+    'chatgpt-4o':        llms.call_chatgpt_4o_api,
+    'deepSeek-V3':       llms.call_deepseek_V3_api,
+    'deepSeek-R1':       llms.call_deepseek_R1_api,
+    'qwen-max':          llms.call_qwen_max_api,
+    'qwen-plus':         llms.call_qwen_plus_api,
+    'claude-3-5-sonnet': llms.call_claude_35_sonnet_api,
+    'chatgpt-o3-mini':   llms.call_chatgpt_o3_mini_api,
+    'chatgpt-4.1':       llms.call_chatgpt_41_api,
+    'gemini-2-flash':    llms.call_gemini_2_flash_api,
+    'gemini-2.5-flash':  llms.call_gemini_2_5_flash_api,
+    'llama-3-70B':       llms.call_meta_llama_70B_api
 }
+
+def parse_code(rsp):
+    pattern = r'```json(.*)```'
+    match = re.search(pattern, rsp, re.DOTALL)
+    code_text = match.group(1) if match else rsp
+    code_text = code_text.strip()
+    if (code_text.startswith('"') and code_text.endswith('"')) or (code_text.startswith("'") and code_text.endswith("'")):
+        code_text = code_text[1:-1].strip()
+    code_text = code_text.replace('\\n', '\n')
+    if "'" in code_text and '"' not in code_text:
+        code_text = code_text.replace("'", '"')
+    parsed = json.loads(code_text)
+    data = json.dumps(parsed, separators=(',', ':'), ensure_ascii=False)
+    return json.loads(data)
 
 def call_model(model_name, prompt_text):
     if model_name not in MODEL_CALLERS:
         raise ValueError(f"Unknown model: {model_name}")
-    return MODEL_CALLERS[model_name](prompt_text)
+    return parse_code(MODEL_CALLERS[model_name](prompt_text))
 
+def load_example(side: str) -> dict:
+    """
+    Load example JSON for 'defender' or 'invader'.
+    """
+    path = os.path.join(EXAMPLE_DIR, f'{side.lower()}_example.json')
+    with open(path, encoding='utf-8') as f:
+        return json.load(f)
 
 def generate_initial_placement(model, side, example_json, budget, max_retries=3):
 
@@ -69,29 +105,29 @@ Important: your output must be a single JSON object with the key "{side.lower()}
             "Please adjust your layout to meet the budget constraints. "
             "Previous placement:\n" + json.dumps(placement, ensure_ascii=False, indent=2)
         )
-        print(warning.strip())
 
-    print(f"[Error] {model} {side} placement still exceeds budget after {max_retries} attempts ({cost} > {budget}).")
     return placement
 
+def main():
+    defender_example = load_example('defender')
+    invader_example  = load_example('invader')
 
-with open('./example_json/defender_example.json', "r", encoding="utf-8") as f:
-    defender_example = json.load(f)
-with open('./example_json/invader_example.json', "r", encoding="utf-8") as f:
-    invader_example = json.load(f)
+    for model in models:
+        def_pl = generate_initial_placement(model, 'Defender', defender_example, DEFENDER_BUDGET)
+        inv_pl = generate_initial_placement(model, 'Invader', invader_example, INVADER_BUDGET)
 
-for model in MODELS:
-    defender_pl = generate_initial_placement(model, 'Defender', defender_example, DEFENDER_BUDGET)
-    invader_pl  = generate_initial_placement(model, 'Invader',  invader_example,  INVADER_BUDGET)
+        def_file = os.path.join(OUTPUT_DIR, f'{model.replace("/", "-")}_defender.json')
+        inv_file = os.path.join(OUTPUT_DIR, f'{model.replace("/", "-")}_invader.json')
 
-    defender_fn = f"{model.replace('/', '-')}_defender.json"
-    invader_fn  = f"{model.replace('/', '-')}_invader.json"
+        with open(def_file, 'w', encoding='utf-8') as f:
+            json.dump(def_pl, f, ensure_ascii=False, indent=2)
+        with open(inv_file, 'w', encoding='utf-8') as f:
+            json.dump(inv_pl, f, ensure_ascii=False, indent=2)
 
-    with open(os.path.join(OUTPUT_DIR, defender_fn), 'w', encoding='utf-8') as f:
-        json.dump(defender_pl, f, ensure_ascii=False, indent=2)
-    with open(os.path.join(OUTPUT_DIR, invader_fn), 'w', encoding='utf-8') as f:
-        json.dump(invader_pl, f, ensure_ascii=False, indent=2)
+        print(f'[Saved] {model}: Defender -> {def_file}, Invader -> {inv_file}')
 
-    print(f"[Saved] {model}: defender → {defender_fn}, invader → {invader_fn}")
+    print('[Done] All initial placements generated.')
 
-print("[Done] All initial placements generated.")
+
+if __name__ == '__main__':
+    main()

@@ -1,7 +1,6 @@
 from team import create_team, team_battle
 import json
 import sys
-import os
 
 def main(invader_data, defender_data):
 

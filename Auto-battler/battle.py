@@ -2,12 +2,37 @@ import subprocess
 import os
 import prompt as p
 import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pandas as pd
-from ..LLMs import LLMs as llms
+import LLMs as llms
 import json
 from calculator import budget_calculator
 from extract_information import describe_defenders, describe_invaders
 import re
+
+models  = json.loads(os.getenv('MODELS', '[]'))
+fix_models = json.loads(os.getenv('FIX_MODELS', '[]'))
+rounds = int(os.getenv('ROUNDS', '10'))
+if not models:
+    raise RuntimeError("No MODELS provided in environment")
+
+BASE_DIR = os.path.dirname(__file__) 
+INIT_DIR = os.path.join(BASE_DIR, 'initial_placements')
+
+MODEL_CALLERS = {
+    'chatgpt-o3':        llms.call_chatgpt_o3_api,
+    'chatgpt-4o':        llms.call_chatgpt_4o_api,
+    'deepSeek-V3':       llms.call_deepseek_V3_api,
+    'deepSeek-R1':       llms.call_deepseek_R1_api,
+    'qwen-max':          llms.call_qwen_max_api,
+    'qwen-plus':         llms.call_qwen_plus_api,
+    'claude-3-5-sonnet': llms.call_claude_35_sonnet_api,
+    'chatgpt-o3-mini':   llms.call_chatgpt_o3_mini_api,
+    'chatgpt-4.1':       llms.call_chatgpt_41_api,
+    'gemini-2-flash':    llms.call_gemini_2_flash_api,
+    'gemini-2.5-flash':  llms.call_gemini_2_5_flash_api,
+    'llama-3-70B':       llms.call_meta_llama_70B_api
+}
 
 def parse_code(rsp):
     pattern = r'```json(.*)```'
@@ -37,11 +62,11 @@ def parse_code(rsp):
 
 def run_game_script(human_data, demon_data):
 
-    if not os.path.exists("./game_scripts/main.py"):
+    if not os.path.exists(os.path.join(BASE_DIR, "game_scripts", "main.py")):
         print("Game script main.py does not exist.")
         sys.exit(1)
     try:
-        result = subprocess.run(["python", "./game_scripts/main.py",json.dumps(human_data),json.dumps(demon_data)], check=True, capture_output=True, text=True)
+        result = subprocess.run(["python", os.path.join(BASE_DIR, "game_scripts", "main.py"),json.dumps(human_data),json.dumps(demon_data)], check=True, capture_output=True, text=True)
         output = result.stdout.strip()
         lines = output.splitlines()  
         result = lines[-1]  
@@ -54,21 +79,6 @@ def run_game_script(human_data, demon_data):
         sys.exit(1)
     
     return result
-
-MODEL_CALLERS = {
-    'chatgpt-o3':        llms.call_chatgpt_o3_api,
-    'chatgpt-4o':        llms.call_chatgpt_4o_api,
-    'deepSeek-V3':       llms.call_deepseek_V3_api,
-    'deepSeek-R1':       llms.call_deepseek_R1_api,
-    'qwen-max':          llms.call_qwen_max_api,
-    'qwen-plus':         llms.call_qwen_plus_api,
-    'claude-3-5-sonnet': llms.call_claude_35_sonnet_api,
-    'chatgpt-o3-mini':   llms.call_chatgpt_o3_mini_api,
-    'chatgpt-4.1':       llms.call_chatgpt_41_api,
-    'gemini-2-flash':    llms.call_gemini_2_flash_api,
-    'gemini-2.5-flash':  llms.call_gemini_2_5_flash_api,
-    'llama-3-70B':       llms.call_meta_llama_70B_api
-}
 
 def call_model(model_name, prompt):
     try:
@@ -150,8 +160,12 @@ def main_loop(
 
     def _load_json(role: str, model: str):
         fname = f"{model.replace('/', '-')}_{role}.json"
-        path  = os.path.join("./initial_placements", fname)
-        with open(path, "r", encoding="utf-8") as f:
+        # 之前： path = os.path.join("./initial_placements", fname)
+        path = os.path.join(os.path.dirname(__file__),
+                            'initial_placements', fname)
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Missing init file: {path}")
+        with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
 
     defender_json = _load_json("defender", defender_LLM)
@@ -174,10 +188,8 @@ def main_loop(
             raw_winner
         )
 
-
-
         records.append({
-            "round":         i+1,
+            "round":         i,
             "defender_cost": defender_cost,
             "invader_cost":  invader_cost,
             "winner":        winner,
@@ -209,7 +221,8 @@ def main_loop(
 
 
         save_root = "defender_results" if test_role.lower() == "defender" else "invader_results"
-        save_dir  = os.path.join(
+        save_dir = os.path.join(
+            BASE_DIR,
             save_root,
             path_model.replace("/", "-"),
             tag
@@ -244,26 +257,19 @@ def main_loop(
     
     
 if __name__ == "__main__":
-    models = [
-    'gemini-2.5-flash'
-]
-    fix_models = ['deepSeek-V3']
 
-    
     defender_budget = 20
     invader_budget = 20
 
 
 settings = [
     ("defender",  True, "first"),
-    ("defender",  False, "second"),
-    ("invader",  False, "first"),
-    ("invader",  True, "second")  
+
 ]
 
 for root in ("defender_results", "invader_results"):
     for tag in ("first", "second"):
-        path = os.path.join(root, tag)
+        path = os.path.join(BASE_DIR, root, tag)
         os.makedirs(path, exist_ok=True)
 
 for role, defender_first, tag in settings:
@@ -276,14 +282,12 @@ for role, defender_first, tag in settings:
                 defender_model, invader_model = fixed_model, test_model
                 result_root = "invader_results"
 
-            out_dir  = f"./{result_root}/{tag}"
-            os.makedirs(out_dir, exist_ok=True)
-            out_path = os.path.join(
-                out_dir,
-                f"{test_model.replace('/','-')}_results.csv"
+            csv_dir = os.path.join(BASE_DIR, result_root, tag)
+            os.makedirs(csv_dir, exist_ok=True)
+            csv_path = os.path.join(
+                csv_dir,
+                f"{test_model.replace('/', '-')}_results.csv"
             )
-
-            first_write = not os.path.exists(out_path)
 
             df = main_loop(
                 defender_LLM   = defender_model,
@@ -291,13 +295,17 @@ for role, defender_first, tag in settings:
                 defender_budget= defender_budget,
                 invader_budget= invader_budget,
                 tag = tag,
+                rounds = rounds,
                 defender_first = defender_first,
                 test_role= role
             )
 
-            df.to_csv(out_path,
-                      mode   = 'w' if first_write else 'a',
-                      header = first_write,
-                      index  = False,
-                      encoding = "utf-8")
-            print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {out_path}")
+            first_write = not os.path.exists(csv_path)
+            df.to_csv(
+                csv_path,
+                mode='w' if first_write else 'a',
+                header=first_write,
+                index=False,
+                encoding='utf-8'
+            )
+            print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")

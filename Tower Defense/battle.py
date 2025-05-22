@@ -2,46 +2,22 @@ import subprocess
 import os
 import prompt as p
 import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pandas as pd
-from ..LLMs import LLMs as llms
+import LLMs as llms
 import json
 from calculator import budget_calculator
 from extract_information import describe_humans, describe_demons
 import re
 
-def parse_code(rsp):
-    pattern = r'```json(.*)```'
-    match = re.search(pattern, rsp, re.DOTALL)
-    code_text = match.group(1) if match else rsp
-    code_text = code_text.strip()
-    if (code_text.startswith('"') and code_text.endswith('"')) or (code_text.startswith("'") and code_text.endswith("'")):
-        code_text = code_text[1:-1].strip()
-    code_text = code_text.replace('\\n', '\n')
-    if "'" in code_text and '"' not in code_text:
-        code_text = code_text.replace("'", '"')
-    parsed = json.loads(code_text)
-    data = json.dumps(parsed, separators=(',', ':'), ensure_ascii=False)
-    return json.loads(data)
+models  = json.loads(os.getenv('MODELS', '[]'))
+fix_models = json.loads(os.getenv('FIX_MODELS', '[]'))
+rounds = int(os.getenv('ROUNDS', '10'))
+if not models:
+    raise RuntimeError("No MODELS provided in environment")
 
-def run_game_script(human_data, demon_data):
-
-    if not os.path.exists("./game_scripts/run.py"):
-        print("Game script run.py does not exist.")
-        sys.exit(1)
-    try:
-        result = subprocess.run(["python", "./game_scripts/run.py",json.dumps(human_data),json.dumps(demon_data)], check=True, capture_output=True, text=True)
-        output = result.stdout.strip()
-        lines = output.splitlines()  
-        result = lines[-1]  
-
-    except subprocess.CalledProcessError as e:
-        print(f"Error occurred while running the game script: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        sys.exit(1)
-    
-    return result
+BASE_DIR = os.path.dirname(__file__) 
+INIT_DIR = os.path.join(BASE_DIR, 'initial_placements')
 
 MODEL_CALLERS = {
     'chatgpt-o3':        llms.call_chatgpt_o3_api,
@@ -57,6 +33,41 @@ MODEL_CALLERS = {
     'gemini-2.5-flash':  llms.call_gemini_2_5_flash_api,
     'llama-3-70B':       llms.call_meta_llama_70B_api
 }
+
+def parse_code(rsp):
+    pattern = r'```json(.*)```'
+    match = re.search(pattern, rsp, re.DOTALL)
+    code_text = match.group(1) if match else rsp
+    code_text = code_text.strip()
+    if (code_text.startswith('"') and code_text.endswith('"')) or (code_text.startswith("'") and code_text.endswith("'")):
+        code_text = code_text[1:-1].strip()
+    code_text = code_text.replace('\\n', '\n')
+    if "'" in code_text and '"' not in code_text:
+        code_text = code_text.replace("'", '"')
+    print("---- extracted JSON text ----\n", code_text, "\n---- end ----")
+    parsed = json.loads(code_text)
+    data = json.dumps(parsed, separators=(',', ':'), ensure_ascii=False)
+    return json.loads(data)
+
+def run_game_script(human_data, demon_data):
+
+    if not os.path.exists(os.path.join(BASE_DIR, "game_scripts", "run.py")):
+        print("Game script run.py does not exist.")
+        sys.exit(1)
+    try:
+        result = subprocess.run(["python", os.path.join(BASE_DIR, "game_scripts", "run.py"),json.dumps(human_data),json.dumps(demon_data)], check=True, capture_output=True, text=True)
+        output = result.stdout.strip()
+        lines = output.splitlines()  
+        result = lines[-1]  
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred while running the game script: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        sys.exit(1)
+    
+    return result
 
 def call_model(model_name, prompt):
     try:
@@ -115,7 +126,6 @@ def decide_winner(human_cost, demon_cost,
     if over_human == 0 and over_demon == 0:
         return winner   # 用你原来的胜负判定
 
-    # 双方都超支，比超支比例
     pct_human = over_human / human_budget
     pct_demon = over_demon / demon_budget
     if pct_human < pct_demon:
@@ -211,7 +221,8 @@ def main_loop(
             demon_json = updated
 
         save_root = "human_results" if test_role.lower() == "human" else "demon_results"
-        save_dir  = os.path.join(
+        save_dir = os.path.join(
+            BASE_DIR,
             save_root,
             path_model.replace("/", "-"),
             tag
@@ -259,14 +270,9 @@ def main_loop(
     return pd.DataFrame(records)
     
 if __name__ == "__main__":
-    models = [
-    'gemini-2.5-flash',
-]
-    fix_models = ['claude-3-5-sonnet','deepSeek-V3']
 
-    
-    human_budget = 2000
-    demon_budget = 1500
+    HUMAN_BUDGET = 2000
+    DEMON_BUDGET = 1500
 
 
 settings = [
@@ -291,28 +297,31 @@ for role, human_first, tag in settings:
                 human_model, demon_model = fixed_model, test_model
                 result_root = "demon_results"
 
-            out_dir  = f"./{result_root}/{tag}"
-            os.makedirs(out_dir, exist_ok=True)
-            out_path = os.path.join(
-                out_dir,
-                f"{test_model.replace('/','-')}_results.csv"
+            csv_dir = os.path.join(BASE_DIR, result_root, tag)
+            os.makedirs(csv_dir, exist_ok=True)
+            csv_path = os.path.join(
+                csv_dir,
+                f"{test_model.replace('/', '-')}_results.csv"
             )
 
-            first_write = not os.path.exists(out_path)
 
             df = main_loop(
                 human_LLM   = human_model,
                 demon_LLM   = demon_model,
-                human_budget= human_budget,
-                demon_budget= demon_budget,
+                human_budget= HUMAN_BUDGET,
+                demon_budget=  DEMON_BUDGET,
                 tag=tag,
+                rounds = rounds,
                 human_first = human_first,
                 test_role= role
             )
 
-            df.to_csv(out_path,
-                      mode   = 'w' if first_write else 'a',
-                      header = first_write,
-                      index  = False,
-                      encoding = "utf-8")
-            print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {out_path}")
+            first_write = not os.path.exists(csv_path)
+            df.to_csv(
+                csv_path,
+                mode='w' if first_write else 'a',
+                header=first_write,
+                index=False,
+                encoding='utf-8'
+            )
+            print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")
