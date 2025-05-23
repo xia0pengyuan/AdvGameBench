@@ -124,9 +124,9 @@ def main():
         with open(inv_file, 'w', encoding='utf-8') as f:
             json.dump(inv_pl, f, ensure_ascii=False, indent=2)
 
-        print(f'[Saved] {model}: Defender -> {def_file}, Invader -> {inv_file}')
+        #print(f'[Saved] {model}: Defender -> {def_file}, Invader -> {inv_file}')
 
-    print('[Done] All initial placements generated.')
+    #print('[Done] All initial placements generated.')
 
 
 if __name__ == '__main__':

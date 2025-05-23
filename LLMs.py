@@ -6,7 +6,7 @@ from google import genai
 from google.genai import types
 
 def call_chatgpt_41_api(prompt):
-    openai.api_key = os.getenv('UIUC_OPENAI_API_KEY')
+    openai.api_key = os.getenv('OPENAI_API_KEY')
     completion = openai.chat.completions.create(
         model="gpt-4.1-2025-04-14",
         messages=[
@@ -20,7 +20,7 @@ def call_chatgpt_41_api(prompt):
     return completion.choices[0].message.content
 
 def call_chatgpt_4o_api(prompt):
-    openai.api_key = os.getenv('UIUC_OPENAI_API_KEY')
+    openai.api_key = os.getenv('OPENAI_API_KEY')
     completion = openai.chat.completions.create(
         model="gpt-4o-2024-08-06",
         messages=[
@@ -34,7 +34,7 @@ def call_chatgpt_4o_api(prompt):
     return completion.choices[0].message.content
 
 def call_chatgpt_o3_api(prompt):
-    openai.api_key = os.getenv('UIUC_OPENAI_API_KEY')
+    openai.api_key = os.getenv('OPENAI_API_KEY')
     completion = openai.chat.completions.create(
         model="o3-2025-04-16",
         messages=[
@@ -45,7 +45,7 @@ def call_chatgpt_o3_api(prompt):
     return completion.choices[0].message.content
 
 def call_chatgpt_o3_mini_api(prompt):
-    openai.api_key = os.getenv('UIUC_OPENAI_API_KEY')
+    openai.api_key = os.getenv('OPENAI_API_KEY')
     completion = openai.chat.completions.create(
         model="o3-mini-2025-01-31",
         messages=[
@@ -123,7 +123,7 @@ def call_claude_35_sonnet_api(prompt):
     return message.content[0].text
 
 def call_gemini_2_flash_api(prompt):
-    api_key = 'AIzaSyCTq3KQmLuzkQUyhOAvKdkSMR_mloFnKrI'
+    api_key = os.getenv('GEMINI_API_KEY')
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model="gemini-2.0-flash-001",
@@ -137,7 +137,7 @@ def call_gemini_2_flash_api(prompt):
     return response.text
 
 def call_gemini_2_5_flash_api(prompt):
-    api_key = 'AIzaSyCTq3KQmLuzkQUyhOAvKdkSMR_mloFnKrI'
+    api_key = os.getenv('GEMINI_API_KEY')
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model="gemini-2.5-flash-preview-04-17",
@@ -151,21 +151,5 @@ def call_gemini_2_5_flash_api(prompt):
     print('Gemini 2.5 Flash API response:', response.text)
     return response.text
 
-def call_meta_llama_70B_api(prompt):
-    client = OpenAI(
-        api_key='LLAMA_API_KEY',
-        base_url="https://openrouter.ai/api/v1"
-    )
-    completion = client.chat.completions.create(
-        model="meta-llama/llama-3.3-70b-instruct",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=2048,
-        temperature=0.3,
-        top_p=1.0
-    )
-    return completion.choices[0].message.content
 
 

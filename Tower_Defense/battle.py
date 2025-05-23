@@ -44,7 +44,6 @@ def parse_code(rsp):
     code_text = code_text.replace('\\n', '\n')
     if "'" in code_text and '"' not in code_text:
         code_text = code_text.replace("'", '"')
-    print("---- extracted JSON text ----\n", code_text, "\n---- end ----")
     parsed = json.loads(code_text)
     data = json.dumps(parsed, separators=(',', ':'), ensure_ascii=False)
     return json.loads(data)
@@ -74,7 +73,7 @@ def call_model(model_name, prompt):
         caller = MODEL_CALLERS[model_name]
     except KeyError:
         raise ValueError(f"Unknown model: {model_name}")
-    print(f"[Calling] {model_name}")
+    #print(f"[Calling] {model_name}")
 
     return parse_code(caller(prompt))
 
@@ -149,7 +148,9 @@ def main_loop(
 
     def _load_json(role: str, model: str):
         fname = f"{model.replace('/', '-')}_{role}.json"
-        path  = os.path.join("./initial_placements", fname)
+        # 之前： path = os.path.join("./initial_placements", fname)
+        path = os.path.join(os.path.dirname(__file__),
+                            'initial_placements', fname)
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
 
@@ -160,7 +161,7 @@ def main_loop(
 
     update_order = ["Human", "Demon"] if human_first else ["Demon", "Human"]
 
-    for i in range(1, rounds + 1):
+    for i in range(1, rounds):
         out = run_game_script(human_json, demon_json)
         lost_row = remain_chars = remain_cost = None
         m = re.search(
@@ -255,7 +256,7 @@ def main_loop(
     )
 
     records.append({
-        "round":               rounds + 1,
+        "round":               rounds,
         "side":                None,
         "human_cost":          final_human_cost,
         "demon_cost":          final_demon_cost,
@@ -284,7 +285,7 @@ settings = [
 
 for root in ("human_results", "demon_results"):
     for tag in ("first", "second"):
-        path = os.path.join(root, tag)
+        path = os.path.join(BASE_DIR, root, tag)
         os.makedirs(path, exist_ok=True)
 
 for role, human_first, tag in settings:
@@ -324,4 +325,4 @@ for role, human_first, tag in settings:
                 index=False,
                 encoding='utf-8'
             )
-            print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")
+            #print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")

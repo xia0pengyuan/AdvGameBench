@@ -68,7 +68,9 @@ def call_model(model_name: str, prompt: str) -> str:
     """
     if model_name not in MODEL_CALLERS:
         raise ValueError(f"Unknown model: {model_name}")
-    return parse_code(MODEL_CALLERS[model_name](prompt))
+    output = MODEL_CALLERS[model_name](prompt)
+    #print(model_name, output)
+    return parse_code(output)
 
 
 def generate_initial_placement(model: str, side: str, example: dict, budget: int, retries: int = 5) -> dict:
@@ -77,18 +79,19 @@ def generate_initial_placement(model: str, side: str, example: dict, budget: int
     """
     base_prompt = f"""
 You are the {side} side.
-Your budget is {budget}.
+Your task is to purchase characters/units and arrange them to maximize your chances of winning.
+Your total budget for {side.lower()} is {budget}.
 
 Game Rules:
 {p.rule}
 
-{side} Units:
+{side} Unit Information:
 {getattr(p, side.lower())}
 
 Example {side} JSON:
 {json.dumps(example, ensure_ascii=False)}
 
-Output a single JSON object with key \"{side.lower()}s\" only.
+Important: your output must be a single JSON object with the key "{side.lower()}s" and must not include any other text or explanation.
 """
     feedback = ""
 
@@ -102,13 +105,10 @@ Output a single JSON object with key \"{side.lower()}s\" only.
 
         warning = f"[Attempt {i}] cost {cost} exceeds budget {budget}."
         feedback = warning + " Please adjust layout. Previous output: " + json.dumps(response, indent=2)
-        print(warning)
 
-    print(f"[Error] {model} {side} placement still exceeds budget after {retries} retries.")
     return response
 
 
-# Load examples
 with open(os.path.join(EXAMPLE_DIR, 'human_example.json'), encoding='utf-8') as f:
     human_example = json.load(f)
 with open(os.path.join(EXAMPLE_DIR, 'demon_example.json'), encoding='utf-8') as f:
@@ -127,6 +127,6 @@ for m in models:
     with open(demon_file, 'w', encoding='utf-8') as f:
         json.dump(demon_output, f, ensure_ascii=False, indent=2)
 
-    print(f"[Saved] {m}: Human -> {human_file}, Demon -> {demon_file}")
+    #print(f"[Saved] {m}: Human -> {human_file}, Demon -> {demon_file}")
 
-print("[Done] All initial placements generated.")
+#print("[Done] All initial placements generated.")

@@ -85,7 +85,7 @@ def call_model(model_name, prompt):
         caller = MODEL_CALLERS[model_name]
     except KeyError:
         raise ValueError(f"Unknown model: {model_name}")
-    print(f"[Calling] {model_name}")
+    #print(f"[Calling] {model_name}")
     
     return parse_code(caller(prompt))
 
@@ -245,7 +245,7 @@ def main_loop(
     )
 
     records.append({
-        "round":         rounds+1,
+        "round":         rounds,
         "defender_cost": final_defender_cost,
         "invader_cost":  final_invader_cost,
         "winner":        winner,
@@ -264,7 +264,9 @@ if __name__ == "__main__":
 
 settings = [
     ("defender",  True, "first"),
-
+    ("defender",  False, "second"),
+    ("invader",  False, "first"),
+    ("invader",  True, "second")  
 ]
 
 for root in ("defender_results", "invader_results"):
@@ -308,4 +310,4 @@ for role, defender_first, tag in settings:
                 index=False,
                 encoding='utf-8'
             )
-            print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")
+            #print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")

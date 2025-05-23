@@ -15,7 +15,6 @@ def run_stage(game: str, stage: str, env: dict):
     """
     script = os.path.join(game, f"{stage}.py")
     if not os.path.isfile(script):
-        print(f"[WARN] {stage}.py not found for game '{game}', skipping.")
         return
     print(f"--> Running {game}/{stage}.py")
     subprocess.run([sys.executable, script], env=env, check=True)

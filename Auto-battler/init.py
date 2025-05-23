@@ -82,18 +82,19 @@ def generate_initial_placement(model: str, side: str, example: dict, budget: int
     """
     prompt_template = f"""
 You are the {side} side.
-Your budget is {budget}.
+Your task is to purchase characters/units and arrange them to maximize your chances of winning.
+Your total budget for {side.lower()} is {budget}.
 
 Game Rules:
 {p.rule}
 
-{side} Units:
+{side} Unit Information:
 {getattr(p, side.lower())}
 
-Example JSON:
+Example {side} JSON:
 {json.dumps(example, ensure_ascii=False)}
 
-Return exactly one JSON object with key '{side.lower()}s'.
+Important: your output must be a single JSON object with the key "{side.lower()}s" and must not include any other text or explanation.
 """
     feedback = ''
     for attempt in range(1, retries + 1):
@@ -104,7 +105,6 @@ Return exactly one JSON object with key '{side.lower()}s'.
             return placement
         feedback = (f'[Attempt {attempt}] cost {cost} > budget {budget}. '
                     f'Adjust layout. Previous output:\n{json.dumps(placement, indent=2)}')
-    print(f"[Error] {model} {side} placement exceeds budget after {retries} retries.")
     return placement
 
 
@@ -133,9 +133,9 @@ def main():
         with open(inv_file, 'w', encoding='utf-8') as f:
             json.dump(inv_pl, f, ensure_ascii=False, indent=2)
 
-        print(f'[Saved] {model}: Defender -> {def_file}, Invader -> {inv_file}')
+        #print(f'[Saved] {model}: Defender -> {def_file}, Invader -> {inv_file}')
 
-    print('[Done] All initial placements generated.')
+    #print('[Done] All initial placements generated.')
 
 
 if __name__ == '__main__':

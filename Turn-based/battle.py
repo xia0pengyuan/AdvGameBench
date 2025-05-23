@@ -76,7 +76,7 @@ def call_model(model_name, prompt):
         caller = MODEL_CALLERS[model_name]
     except KeyError:
         raise ValueError(f"Unknown model: {model_name}")
-    print(f"[Calling] {model_name}")
+    #print(f"[Calling] {model_name}")
 
     return parse_code(caller(prompt))
 
@@ -184,7 +184,9 @@ def main_loop(
 
     def _load_json(role: str, model: str):
         fname = f"{model.replace('/', '-')}_{role}.json"
-        path  = os.path.join("./initial_placements", fname)
+        # 之前： path = os.path.join("./initial_placements", fname)
+        path = os.path.join(os.path.dirname(__file__),
+                            'initial_placements', fname)
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
 
@@ -209,7 +211,7 @@ def main_loop(
         )
 
         records.append({
-            "round":         i+1,
+            "round":         i,
             "defender_cost": defender_cost,
             "invader_cost":  invader_cost,
             "winner":        winner,
@@ -265,7 +267,7 @@ def main_loop(
     )
 
     records.append({
-        "round":         rounds+1,
+        "round":         rounds,
         "defender_cost": final_defender_cost,
         "invader_cost":  final_invader_cost,
         "winner":        winner,
@@ -290,7 +292,7 @@ settings = [
 
 for root in ("defender_results", "invader_results"):
     for tag in ("first", "second"):
-        path = os.path.join(root, tag)
+        path = os.path.join(BASE_DIR, root, tag)
         os.makedirs(path, exist_ok=True)
 
 for role, defender_first, tag in settings:
@@ -329,4 +331,4 @@ for role, defender_first, tag in settings:
                 index=False,
                 encoding='utf-8'
             )
-            print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")
+            #print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")

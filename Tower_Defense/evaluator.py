@@ -9,26 +9,32 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 
-def _is_win(row: pd.Series, model: str) -> bool:
-    if row["human_LLM"] == model and row["winner"] == "Human":
-        return True
-    if row["demon_LLM"] == model and row["winner"] == "Demon":
-        return True
-    return False
+def _is_win(row: pd.Series, model: str, role: str) -> bool:
+    if role == "human":
+        return (row["human_LLM"] == model) and (row["winner"] == "Human")
+    elif role == "demon":
+        return (row["demon_LLM"] == model) and (row["winner"] == "Demon")
+    else:
+        return False
+    
 
 def _cost(row: pd.Series, role: str) -> int:
     return row["human_cost"] if role == "human" else row["demon_cost"]
-
 
 
 def compute_metrics(
     df: pd.DataFrame,
     model: str,
     role: str,
+    tag: str,
     human_budget: int,
     demon_budget: int,
 ) -> Dict[str, float]:
-    """Return five metrics for given (model, role) DataFrame."""
+    if "round" in df.columns:
+        df = df[df["round"] != 1].reset_index(drop=True)
+
+    parity = 0 if tag == "first" else 1
+    df = df[df["round"] % 2 == parity].reset_index(drop=True)
     n = len(df)
     if n == 0:
         return {
@@ -40,29 +46,26 @@ def compute_metrics(
         }
 
     # 1. Win rate
-    win_rate = df.apply(lambda r: _is_win(r, model), axis=1).mean()
+    win_rate = df.apply(lambda r: _is_win(r, model,role), axis=1).mean()
 
     # 2. Over-budget ratio
     budget = human_budget if role == "human" else demon_budget
     over_budget_ratio = df.apply(lambda r: _cost(r, role) > budget, axis=1).mean()
 
-    # 3. Correction rate
+    # 3‑4. Correction & success rate ------------------------------------------
     costs = df.apply(lambda r: _cost(r, role), axis=1).to_numpy()
-    idx = np.arange(0 if role == "human" else 1, n, 2)
-    corr = np.count_nonzero(np.diff(costs[idx]) != 0)
-    turns = len(idx) - 1
-    correction_rate = corr / turns if turns > 0 else 0.0
-
-    # 4. Correction success
-    success = 0
-    for i in idx[:-1]:
-        if costs[i + 2] != costs[i]:
-            if not _is_win(df.iloc[i], model) and _is_win(df.iloc[i + 1], model):
-                success += 1
+    corr = np.count_nonzero(np.diff(costs) != 0)                         # 修正次数
+    success = sum(
+        _is_win(df.iloc[i + 1], model, role)                             # 修正后这一行是否赢
+        for i in range(n - 1)
+        if costs[i + 1] != costs[i]                                      # 发生修正
+    )
+    turns = n - 1                                                        # 同方连续出手的总对数
+    correction_rate         = corr / turns if turns > 0 else 0.0
     correction_success_rate = success / corr if corr > 0 else 0.0
 
     # 5. Improvement slope
-    indicator = df.apply(lambda r: 1 if _is_win(r, model) else 0, axis=1).to_numpy()
+    indicator = df.apply(lambda r: 1 if _is_win(r, model, role) else 0, axis=1).to_numpy()
     if n > 1:
         X = np.arange(n).reshape(-1, 1)
         slope = float(LinearRegression().fit(X, indicator).coef_[0])
@@ -92,13 +95,8 @@ def collect_csvs(root: Path) -> List[Tuple[str, str, Path]]:
             if not tag_dir.is_dir():
                 continue
             for csv_file in tag_dir.glob("*.csv"):
-                stem = csv_file.stem
-                if stem.endswith("_results"):
-                    model_slug = stem[: -len("_results")]
-                else:
-                    model_slug = stem
-                model = model_slug.replace("-", "/")
-                items.append((model, role, csv_file))
+                model = csv_file.stem.removesuffix("_results")
+                items.append((model, role, tag, csv_file))
     return items
 
 # -----------------------------------------------------------------------------  
@@ -125,9 +123,12 @@ def main() -> None:
     args = parser.parse_args()
 
     rows = []
-    for model, role, csv_path in collect_csvs(args.results_root):
+    for model, role, tag, csv_path in collect_csvs(args.results_root):
         df = pd.read_csv(csv_path)
-        metrics = compute_metrics(df, model, role, 2000, 1500)
+        metrics = compute_metrics(
+            df, model, role, tag,
+            2000, 1500
+        )
         metrics["model"] = model
         rows.append(metrics)
 
@@ -138,7 +139,7 @@ def main() -> None:
     # 不再按 role 分组，仅按 model 计算平均
     df_out = pd.DataFrame(rows).groupby("model", as_index=False).mean(numeric_only=True)
     df_out.to_csv(args.out_file, index=False, quoting=csv.QUOTE_NONNUMERIC)
-    print(f"[✓] Metrics saved to {args.out_file}")
+    print("Tower_Defense:\n",df_out)
 
 if __name__ == "__main__":
     main()
