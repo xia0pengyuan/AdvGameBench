@@ -1,7 +1,6 @@
 import re
 import prompt as p
 
-# ——— 预先生成两张查表 ———
 _HUMAN_COST_MAP = {}
 _DEMON_COST_MAP = {}
 
@@ -18,16 +17,12 @@ def extract_costs(text):
             cost_dict[unit_name] = int(m.group(1))
     return cost_dict
 
-# 初始化一次
 _HUMAN_COST_MAP = extract_costs(p.human)
 _DEMON_COST_MAP = extract_costs(p.demon)
 
 
 def budget_calculator(map_data):
-    """
-    累加 map_data 中所有 humans 或 demons 的 cost，
-    直接从预先生成的 _HUMAN_COST_MAP/_DEMON_COST_MAP 查表。
-    """
+
     total_cost = 0
 
     if "humans" in map_data:

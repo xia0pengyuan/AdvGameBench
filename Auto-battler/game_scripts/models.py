@@ -18,15 +18,19 @@ class Character:
         self.hp = 100
         self.skills = skills  
         self.skill_index = 0  
-        # 用字典存储状态，key=状态名，value=【列表】(可以堆叠多个相同名字的状态)
         self.statuses = {}
 
-        # 可选的：有些技能会储存伤害，用作二次结算
         self.stored_damage = 0
 
     def add_status(self, status):
+        """
+        Apply a new status effect to this character.
+
+        Raises:
+            ValueError: If the provided object is not a Status instance.
+        """
         if not isinstance(status, Status):
-            raise ValueError("状态对象必须是 Status 类的实例")
+            raise ValueError("Status must be an instance of Status class")
         if status.name in self.statuses:
             self.statuses[status.name].append(status)
         else:
@@ -38,7 +42,7 @@ class Character:
 
     def update_statuses(self):
         """
-        每回合结束时更新所有状态的持续时间，并移除到期状态
+        Decrement duration of each status at end of turn and remove expired ones.
         """
         for name in list(self.statuses.keys()):
             new_list = []
@@ -53,7 +57,7 @@ class Character:
 
     def process_statuses(self):
         """
-        每回合处理所有状态的持续效果（如燃烧持续伤害、持续治疗、毒伤等）
+        Apply ongoing effects for each status (e.g., burn damage, regen).
         """
         for status_list in self.statuses.values():
             for s in status_list:
@@ -61,7 +65,7 @@ class Character:
 
     def get_status_layers(self, status_name):
         """
-        返回指定状态的累计层数
+        Return the total layers of the specified status.
         """
         if status_name in self.statuses:
             return sum(s.layers for s in self.statuses[status_name])
@@ -69,7 +73,7 @@ class Character:
 
     def get_next_skill(self):
         """
-        简单的轮转技能索引
+        Simple round-robin skill index.
         """
         skill = self.skills[self.skill_index]
         self.skill_index = (self.skill_index + 1) % len(self.skills)
@@ -80,7 +84,7 @@ class Character:
 
     def reset(self):
         """
-        重置角色状态，方便进行多次对局测试
+        Reset character state for multiple rounds of testing.
         """
         self.hp = self.max_hp
         self.skill_index = 0
@@ -91,12 +95,12 @@ class Character:
         return f"{self.name}({self.element}) HP:{self.hp}"
 
     def attack(attacker, defender, skill_func):
-
+        # 1. Save HP before attack
         defender_hp_before = defender.hp
-
+        # 2. Perform the skill action
         skill_func(attacker, defender)
-
-        damage_dealt = max(0, defender_hp_before - defender.hp)  # 计算本次技能对 defender 实际造成的伤害
+        # 3. Compute net damage dealt
+        damage_dealt = max(0, defender_hp_before - defender.hp)  
 
         for status_list in defender.statuses.values():
             for status_obj in status_list:
@@ -104,14 +108,12 @@ class Character:
                 if reflect > 0:
                     attacker.hp -= reflect
 
-        # 4. attacker 自身状态的额外反击伤害
         for status_list in attacker.statuses.values():
             for status_obj in status_list:
                 counter = status_obj.get_counter_damage()
                 if counter > 0:
                     attacker.hp -= counter
 
-        # 5. 清除一次性触发的状态
         if "Faith Emblem" in defender.statuses:
             defender.remove_status("Faith Emblem")
         if "Divine Link" in defender.statuses:

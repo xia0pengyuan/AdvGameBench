@@ -111,19 +111,18 @@ def make_prompt(side, last_json, opp_json, result, budget, cost):
 def decide_winner(human_cost, demon_cost,
                   human_budget, demon_budget,
                   winner):
-    # 计算超支额
+
     over_human = max(human_cost - human_budget, 0)
     over_demon = max(demon_cost - demon_budget, 0)
 
-    # 一方合规 另一方违规
     if over_human == 0 and over_demon > 0:
         return "Human"
     if over_demon == 0 and over_human > 0:
         return "Demon"
 
-    # 双方都合规
+
     if over_human == 0 and over_demon == 0:
-        return winner   # 用你原来的胜负判定
+        return winner  
 
     pct_human = over_human / human_budget
     pct_demon = over_demon / demon_budget
@@ -142,13 +141,28 @@ def main_loop(
     human_first: bool = True,
     test_role: str = "human",   
 ) -> pd.DataFrame:
-    
+    """
+    Run multiple rounds of Human vs. Demon match-ups.
+    Records cost, winner, lost grid row, and remaining stats each round.
+
+    Args:
+        human_LLM: Model name controlling Human side.
+        demon_LLM: Model name controlling Demon side.
+        human_budget: Budget cap for Human units.
+        demon_budget: Budget cap for Demon units.
+        tag:       'first' or 'second' mover tag for filtering.
+        rounds:    Number of update rounds to execute.
+        human_first: If True, Human acts first each round.
+        test_role: Which side to evaluate ("human" or "demon").
+
+    Returns:
+        DataFrame of per-round records.
+    """
     path_model = human_LLM if test_role.lower() == "human" else demon_LLM
     test_model = demon_LLM if test_role.lower() == "human" else human_LLM
-
+    # Helper to load JSON placement for given role and model
     def _load_json(role: str, model: str):
         fname = f"{model.replace('/', '-')}_{role}.json"
-        # 之前： path = os.path.join("./initial_placements", fname)
         path = os.path.join(os.path.dirname(__file__),
                             'initial_placements', fname)
         with open(path, "r", encoding="utf-8") as f:
@@ -182,10 +196,9 @@ def main_loop(
             raw_winner
         )
 
-        # 1‑B 记录对战结果
         records.append({
             "round":               i,
-            "side":                None,     # 这一条是“对战结果”记录
+            "side":                None,     
             "human_cost":          human_cost,
             "demon_cost":          demon_cost,
             "winner":              winner,
@@ -195,8 +208,7 @@ def main_loop(
             "human_LLM":           human_LLM,
             "demon_LLM":           demon_LLM,
         })
-
-        # 1‑C 轮到哪一方更新
+        # Determine which side updates placement this turn
         side = update_order[(i - 1) % 2]
         if side == "Human":
             model       = human_LLM
@@ -211,11 +223,10 @@ def main_loop(
             budget      = demon_budget
             cost        = demon_cost
 
-        # 1‑D 生成 prompt、调用模型获得新布局
+        # Build prompt, call model, and update JSON state
         prompt  = make_prompt(side, last_json, opp_json, winner, budget, cost)
         updated = call_model(model, prompt)
 
-        # 1‑E 写回新布局到内存
         if side == "Human":
             human_json = updated
         else:
@@ -275,54 +286,54 @@ if __name__ == "__main__":
     HUMAN_BUDGET = 2000
     DEMON_BUDGET = 1500
 
+# Configuration: test both roles acting first or second
+    settings = [
+        ("human",  True, "first"),
+        ("human",  False, "second"),
+        ("demon",  False, "first"),
+        ("demon",  True, "second")
+    ]
 
-settings = [
-    ("human",  True, "first"),
-    ("human",  False, "second"),
-    ("demon",  False, "first"),
-    ("demon",  True, "second")
-]
+    for root in ("human_results", "demon_results"):
+        for tag in ("first", "second"):
+            path = os.path.join(BASE_DIR, root, tag)
+            os.makedirs(path, exist_ok=True)
 
-for root in ("human_results", "demon_results"):
-    for tag in ("first", "second"):
-        path = os.path.join(BASE_DIR, root, tag)
-        os.makedirs(path, exist_ok=True)
+    for role, human_first, tag in settings:
+        for test_model in models:
+            for fixed_model in fix_models:
+                if role == "human":
+                    human_model, demon_model = test_model, fixed_model
+                    result_root = "human_results"
+                else:
+                    human_model, demon_model = fixed_model, test_model
+                    result_root = "demon_results"
 
-for role, human_first, tag in settings:
-    for test_model in models:
-        for fixed_model in fix_models:
-            if role == "human":
-                human_model, demon_model = test_model, fixed_model
-                result_root = "human_results"
-            else:
-                human_model, demon_model = fixed_model, test_model
-                result_root = "demon_results"
-
-            csv_dir = os.path.join(BASE_DIR, result_root, tag)
-            os.makedirs(csv_dir, exist_ok=True)
-            csv_path = os.path.join(
-                csv_dir,
-                f"{test_model.replace('/', '-')}_results.csv"
-            )
+                csv_dir = os.path.join(BASE_DIR, result_root, tag)
+                os.makedirs(csv_dir, exist_ok=True)
+                csv_path = os.path.join(
+                    csv_dir,
+                    f"{test_model.replace('/', '-')}_results.csv"
+                )
 
 
-            df = main_loop(
-                human_LLM   = human_model,
-                demon_LLM   = demon_model,
-                human_budget= HUMAN_BUDGET,
-                demon_budget=  DEMON_BUDGET,
-                tag=tag,
-                rounds = rounds,
-                human_first = human_first,
-                test_role= role
-            )
+                df = main_loop(
+                    human_LLM   = human_model,
+                    demon_LLM   = demon_model,
+                    human_budget= HUMAN_BUDGET,
+                    demon_budget=  DEMON_BUDGET,
+                    tag=tag,
+                    rounds = rounds,
+                    human_first = human_first,
+                    test_role= role
+                )
 
-            first_write = not os.path.exists(csv_path)
-            df.to_csv(
-                csv_path,
-                mode='w' if first_write else 'a',
-                header=first_write,
-                index=False,
-                encoding='utf-8'
-            )
-            #print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")
+                first_write = not os.path.exists(csv_path)
+                df.to_csv(
+                    csv_path,
+                    mode='w' if first_write else 'a',
+                    header=first_write,
+                    index=False,
+                    encoding='utf-8'
+                )
+                #print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")

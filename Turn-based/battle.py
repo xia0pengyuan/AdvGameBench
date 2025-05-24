@@ -184,7 +184,6 @@ def main_loop(
 
     def _load_json(role: str, model: str):
         fname = f"{model.replace('/', '-')}_{role}.json"
-        # 之前： path = os.path.join("./initial_placements", fname)
         path = os.path.join(os.path.dirname(__file__),
                             'initial_placements', fname)
         with open(path, "r", encoding="utf-8") as f:
@@ -283,52 +282,52 @@ if __name__ == "__main__":
     invader_budget = 20
 
 
-settings = [
-    ("defender",  True, "first"),
-    ("defender",  False, "second"),
-    ("invader",  False, "first"),
-    ("invader",  True, "second")  
-]
+    settings = [
+        ("defender",  True, "first"),
+        ("defender",  False, "second"),
+        ("invader",  False, "first"),
+        ("invader",  True, "second")  
+    ]
 
-for root in ("defender_results", "invader_results"):
-    for tag in ("first", "second"):
-        path = os.path.join(BASE_DIR, root, tag)
-        os.makedirs(path, exist_ok=True)
+    for root in ("defender_results", "invader_results"):
+        for tag in ("first", "second"):
+            path = os.path.join(BASE_DIR, root, tag)
+            os.makedirs(path, exist_ok=True)
 
-for role, defender_first, tag in settings:
-    for test_model in models:
-        for fixed_model in fix_models:
-            if role == "defender":
-                defender_model, invader_model = test_model, fixed_model
-                result_root = "defender_results"
-            else:
-                defender_model, invader_model = fixed_model, test_model
-                result_root = "invader_results"
+    for role, defender_first, tag in settings:
+        for test_model in models:
+            for fixed_model in fix_models:
+                if role == "defender":
+                    defender_model, invader_model = test_model, fixed_model
+                    result_root = "defender_results"
+                else:
+                    defender_model, invader_model = fixed_model, test_model
+                    result_root = "invader_results"
 
-            csv_dir = os.path.join(BASE_DIR, result_root, tag)
-            os.makedirs(csv_dir, exist_ok=True)
-            csv_path = os.path.join(
-                csv_dir,
-                f"{test_model.replace('/', '-')}_results.csv"
-            )
+                csv_dir = os.path.join(BASE_DIR, result_root, tag)
+                os.makedirs(csv_dir, exist_ok=True)
+                csv_path = os.path.join(
+                    csv_dir,
+                    f"{test_model.replace('/', '-')}_results.csv"
+                )
 
-            df = main_loop(
-                defender_LLM   = defender_model,
-                invader_LLM   = invader_model,
-                defender_budget= defender_budget,
-                invader_budget= invader_budget,
-                tag = tag,
-                rounds = rounds,
-                defender_first = defender_first,
-                test_role= role
-            )
+                df = main_loop(
+                    defender_LLM   = defender_model,
+                    invader_LLM   = invader_model,
+                    defender_budget= defender_budget,
+                    invader_budget= invader_budget,
+                    tag = tag,
+                    rounds = rounds,
+                    defender_first = defender_first,
+                    test_role= role
+                )
 
-            first_write = not os.path.exists(csv_path)
-            df.to_csv(
-                csv_path,
-                mode='w' if first_write else 'a',
-                header=first_write,
-                index=False,
-                encoding='utf-8'
-            )
-            #print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")
+                first_write = not os.path.exists(csv_path)
+                df.to_csv(
+                    csv_path,
+                    mode='w' if first_write else 'a',
+                    header=first_write,
+                    index=False,
+                    encoding='utf-8'
+                )
+                #print(f"[{result_root}/{tag}] {test_model} ({role}) vs {fixed_model} → {csv_path}")

@@ -54,13 +54,13 @@ def compute_metrics(
 
     # 3‑4. Correction & success rate ------------------------------------------
     costs = df.apply(lambda r: _cost(r, role), axis=1).to_numpy()
-    corr = np.count_nonzero(np.diff(costs) != 0)                         # 修正次数
+    corr = np.count_nonzero(np.diff(costs) != 0)                         
     success = sum(
-        _is_win(df.iloc[i + 1], model, role)                             # 修正后这一行是否赢
+        _is_win(df.iloc[i + 1], model, role)                            
         for i in range(n - 1)
-        if costs[i + 1] != costs[i]                                      # 发生修正
+        if costs[i + 1] != costs[i]                                    
     )
-    turns = n - 1                                                        # 同方连续出手的总对数
+    turns = n - 1                                                     
     correction_rate         = corr / turns if turns > 0 else 0.0
     correction_success_rate = success / corr if corr > 0 else 0.0
 
@@ -79,9 +79,7 @@ def compute_metrics(
         "improvement_slope": slope,
         "over_budget_ratio": over_budget_ratio,
     }
-
-# -----------------------------------------------------------------------------  
-# CSV discovery ---------------------------------------------------------------  
+ 
 
 def collect_csvs(root: Path) -> List[Tuple[str, str, Path]]:
 
@@ -98,9 +96,6 @@ def collect_csvs(root: Path) -> List[Tuple[str, str, Path]]:
                 model = csv_file.stem.removesuffix("_results")
                 items.append((model, role, tag, csv_file))
     return items
-
-# -----------------------------------------------------------------------------  
-# main ------------------------------------------------------------------------  
 
 def main() -> None:
     script_dir = Path(__file__).parent
@@ -136,7 +131,6 @@ def main() -> None:
         print("[WARN] No CSV files found under", args.results_root)
         sys.exit(0)
 
-    # 不再按 role 分组，仅按 model 计算平均
     df_out = pd.DataFrame(rows).groupby("model", as_index=False).mean(numeric_only=True)
     df_out.to_csv(args.out_file, index=False, quoting=csv.QUOTE_NONNUMERIC)
     print("Tower_Defense:\n",df_out)

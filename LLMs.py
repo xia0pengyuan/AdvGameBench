@@ -148,7 +148,6 @@ def call_gemini_2_5_flash_api(prompt):
             top_p=1.0
         )
     )
-    print('Gemini 2.5 Flash API response:', response.text)
     return response.text
 
 

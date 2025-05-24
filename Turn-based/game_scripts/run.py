@@ -145,8 +145,6 @@ class Game:
                 enemy_team = self.invaders.minions
                 friendly_minions = self.defenders.minions
 
-
-            # 执行攻击
             self.current_attacker.attack_target(self.current_target, enemy_team, friendly_minions)
             self.invaders.remove_dead()
             self.defenders.remove_dead()
@@ -178,7 +176,6 @@ class Game:
             team.dead_minions.clear()
 
     def process_shadow_overlord_death(self, shadow_overlord, team):
-        """处理 Shadow Overlord 死亡后的效果"""
         empty_slots = 7 - len(team.minions)
         if empty_slots <= 0:
             return
@@ -381,9 +378,7 @@ class Game:
             line = line.strip()
             if not line:
                 continue
-            # 角色名称为冒号前的部分
             name = line.split(":", 1)[0].strip()
-            # 查找 "Cost:" 后的数字
             match = re.search(r"Cost:\s*(\d+)", line)
             if match:
                 cost = int(match.group(1))

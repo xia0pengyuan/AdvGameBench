@@ -11,17 +11,13 @@ class Minion:
         self.base_attack = attack
         self.base_health = health
         
-        # 应用tier加成
         self.apply_tier_bonus()
         
-        # 燃烧效果
         self.burn_effect = 0
         
-        # 用于跟踪死亡处理状态
         self.death_processed = False
 
     def apply_tier_bonus(self):
-        """应用等级加成"""
         if self.tier == "Gold":
             self.attack = self.base_attack * 2
             self.health = self.base_health * 2
@@ -30,25 +26,19 @@ class Minion:
             self.health = self.base_health
 
     def take_damage(self, damage, attacker=None, enemy_team=None, allies=None):
-        """受到伤害"""
-        # 处理中毒效果
         if attacker and "Poisonous" in attacker.abilities and not self.has_divine_shield():
             self.health = 0
             return self.die(attacker, enemy_team, allies)
         
-        # 处理圣盾
         if self.has_divine_shield():
             self.remove_divine_shield(allies)
             return 0
         
-        # 正常伤害计算
         actual_damage = self.calculate_damage(damage)
         self.health -= actual_damage
         
-        # 处理特殊能力
         self.on_damage_taken(attacker)
         
-        # 检查是否死亡
         excess = 0
         if self.health <= 0:
             excess = abs(self.health)
@@ -57,15 +47,12 @@ class Minion:
         return excess
 
     def calculate_damage(self, damage):
-        """计算实际伤害，子类可以重写以实现护甲等效果"""
         return damage
 
     def has_divine_shield(self):
-        """检查是否有圣盾"""
         return "Divine Shield" in self.abilities
 
     def remove_divine_shield(self, allies):
-        """移除圣盾"""
         if self.has_divine_shield():
             self.abilities.remove("Divine Shield")
             if allies:
@@ -74,64 +61,50 @@ class Minion:
                         ally.on_ally_shield_loss(self)
 
     def on_damage_taken(self, attacker):
-        """受到伤害后的效果，子类可以重写"""
         pass
 
     def attack_target(self, target, enemy_team=None, allies=None):
-        """攻击目标"""
-        # 处理成长效果
         self.handle_growth()
         self.apply_burn()
 
         total_damage = self.attack 
         excess = target.take_damage(total_damage, attacker=self, enemy_team=allies, allies=enemy_team  )
         
-        # 处理特殊攻击效果
         self.on_attack(target, excess, enemy_team, allies)
         
-        # 处理反击伤害
         self.take_damage(target.attack, attacker=target, enemy_team=enemy_team , allies=allies)
 
     def handle_growth(self):
-        """处理成长效果，子类可以重写"""
         pass
 
     def on_attack(self, target, excess, enemy_team, allies):
-        """攻击后的效果，子类可以重写"""
         pass
 
     def die(self, attacker=None, enemy_team=None,allies=None):
-        """死亡"""
         
         excess_health = abs(self.health) if self.health < 0 else 0
         
-        # 处理死亡后的效果
         self.on_death(attacker, enemy_team, allies)
         
         return excess_health
 
     def on_death(self, attacker, enemy_minions, allies):
-        """死亡后的效果，子类可以重写"""
         pass
 
     def heal(self, amount):
-        """治疗"""
         self.health += amount
 
     def apply_burn(self):
-        """应用燃烧效果"""
         if self.burn_effect > 0:
             self.take_damage(self.burn_effect)
             
     def buff_allies_by_element(self, allies, element, attack_buff, health_buff):
-        """为特定元素的友军提供增益"""
         for ally in allies:
             if ally != self and ally.element == element:
                 ally.attack += attack_buff
                 ally.health += health_buff
 
     def buff_all_allies(self, allies, attack_buff, health_buff):
-        """为所有友军提供增益"""
         for ally in allies:
             if ally != self:
                 ally.attack += attack_buff
@@ -150,7 +123,6 @@ class FireLizard(Minion):
         )
 
     def on_death(self, attacker, enemy_minions, allies):
-        """死亡时造成伤害"""
         if attacker and "Deathrattle" in self.abilities:
             damage = 2
             if self.tier == "Gold":
@@ -171,7 +143,6 @@ class WaterElemental(Minion):
         self.growth_value = 1
 
     def handle_growth(self):
-        """处理攻击力成长"""
         value = self.growth_value
         if self.tier == "Gold":
             value *= 2
@@ -281,7 +252,6 @@ class BanditLeader(Minion):
         )
     
     def on_attack(self, target, excess, enemy_team, allies):
-        """攻击后将过量伤害传递给下一个敌方随从"""
         if "Excess Damage Carryover" in self.abilities and excess > 0 and enemy_team:
             alive_enemies = enemy_team.get_alive() if hasattr(enemy_team, "get_alive") else enemy_team
             for enemy in alive_enemies:
@@ -319,7 +289,6 @@ class Phoenix(Minion):
     
     def on_attack(self, target, excess, enemy_team, allies):
         if "Cleave" in self.abilities and enemy_team:
-            # 如果 enemy_team 有 get_alive 方法，则调用它，否则直接认为 enemy_team 是可迭代对象
             alive_enemies = enemy_team.get_alive() if hasattr(enemy_team, "get_alive") else enemy_team
             for enemy in alive_enemies:
                 if enemy != target:
@@ -563,8 +532,6 @@ class King(Minion):
                 tier="Bronze"
             )
             allies.append(soldier)
-
-
 
 
 class MountainGiant(Minion):

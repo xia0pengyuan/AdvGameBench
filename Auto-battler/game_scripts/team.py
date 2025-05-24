@@ -28,10 +28,8 @@ def team_battle(invaders, defenders):
         fighter1 = queue_invaders.popleft()
         fighter2 = queue_defenders.popleft()
         
-        # 调用 battle 函数决定胜者，不再重置获胜者的状态
         winner = battle(fighter1, fighter2)
         
-        # 根据获胜者所属的队伍，将其加入队尾；输家直接退出
         if winner == fighter1:
             queue_invaders.appendleft(winner)
         else:

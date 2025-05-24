@@ -38,7 +38,6 @@ def calculate_damage(attacker, defender, skill_power):
     multiplier = type_effectiveness(attacker.element, defender.element)
     damage = int(base_damage * multiplier)
 
-    # 正确迭代 defender.statuses 中的所有状态对象，累计减伤
     total_damage_reduction = sum(
         s.get_damage_reduction() + s.get_flat_damage_reduction() 
         for status_list in defender.statuses.values() 
@@ -54,7 +53,6 @@ def calculate_damage(attacker, defender, skill_power):
 def flame_splash(attacker, defender):
     damage = 12
     defender.hp -= calculate_damage(attacker, defender, damage)
-    # 持续伤害(debuff)：Burning
     burning = Status("Burning", duration=2, layers=1, damage_per_round=5)
     defender.add_status(burning)
 
@@ -69,7 +67,6 @@ def burst_flame_bomb(attacker, defender):
     defender.hp -= calculate_damage(attacker, defender, total)
 
 def flame_whirlwind(attacker, defender):
-    # 5 layers, 5 dmg/round, 持续3轮
     burning = Status("Burning", duration=3, layers=5, damage_per_round=5)
     defender.add_status(burning)
 
@@ -83,7 +80,6 @@ def magma_eruption(attacker, defender):
 def hell_curtain(attacker, defender):
     damage = 45
     defender.hp -= calculate_damage(attacker, defender, damage)
-    # 反射护盾：反射50点近战伤害，持续3轮
     reflect_amount = 50
     reflect_damage = calculate_damage(attacker, defender, reflect_amount)
     shield = Status("Reflective Shield", duration=3, layers=1, reflect_damage=reflect_damage)
@@ -156,7 +152,6 @@ def final_announcement(attacker, defender):
     defender.hp -= calculate_damage(attacker, defender, total)
 
 def void_assimilation(attacker, defender):
-    # 牺牲25%当前生命造成250%真实伤害
     sacrifice = int(attacker.hp * 0.25)
     attacker.hp -= sacrifice
     damage = int(sacrifice * 2.5)

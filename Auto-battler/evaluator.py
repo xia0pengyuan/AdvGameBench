@@ -8,10 +8,20 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-# -----------------------------------------------------------------------------  
-# helpers ---------------------------------------------------------------------  
+
 
 def _is_win(row: pd.Series, model: str, role: str) -> bool:
+    """
+    Determine if the given row represents a win for the specified model and role.
+
+    Args:
+        row: A pandas Series representing one round's data.
+        model: The model name to check (e.g., "chatgpt-o3").
+        role: Either "defender" or "invader".
+
+    Returns:
+        True if the row indicates that `model` (in the given `role`) won that round.
+    """
     if role == "defender":
         return (row["defender_LLM"] == model) and (row["winner"] == "Defenders")
     elif role == "invader":
@@ -23,17 +33,25 @@ def _cost(row: pd.Series, role: str) -> int:
     return row["defender_cost"] if role == "defender" else row["invader_cost"]
 
 
-# -----------------------------------------------------------------------------  
-# metric computation ----------------------------------------------------------  
-
 def compute_metrics(
     df: pd.DataFrame,
     model: str,
     role: str,
-    tag: str,                     # <- NEW ('first' | 'second')
+    tag: str,                     
     defender_budget: int,
     invader_budget: int,
 ) -> Dict[str, float]:
+    """
+    Compute five performance metrics for one model-role pairing.
+
+    1. win_rate: Fraction of rounds won.
+    2. correction_rate: Fraction of turns where the model changed its placement.
+    3. correction_success_rate: Fraction of corrections that led to a win next turn.
+    4. improvement_slope: Linear trend in win indicator over rounds.
+    5. over_budget_ratio: Fraction of rounds exceeding budget.
+    Returns:
+        A dict mapping metric names to float values.
+    """
 
     if "round" in df.columns:
         df = df[df["round"] != 1].reset_index(drop=True)
@@ -60,13 +78,13 @@ def compute_metrics(
 
     # 3‑4. Correction & success rate ------------------------------------------
     costs = df.apply(lambda r: _cost(r, role), axis=1).to_numpy()
-    corr = np.count_nonzero(np.diff(costs) != 0)                         # 修正次数
+    corr = np.count_nonzero(np.diff(costs) != 0)                         
     success = sum(
-        _is_win(df.iloc[i + 1], model, role)                             # 修正后这一行是否赢
+        _is_win(df.iloc[i + 1], model, role)                             
         for i in range(n - 1)
-        if costs[i + 1] != costs[i]                                      # 发生修正
+        if costs[i + 1] != costs[i]                                      
     )
-    turns = n - 1                                                        # 同方连续出手的总对数
+    turns = n - 1                                                        
     correction_rate         = corr / turns if turns > 0 else 0.0
     correction_success_rate = success / corr if corr > 0 else 0.0
 
@@ -87,13 +105,16 @@ def compute_metrics(
     }
 
 
-# -----------------------------------------------------------------------------  
-# CSV discovery ---------------------------------------------------------------  
-
 def collect_csvs(root: Path) -> List[Tuple[str, str, str, Path]]:
     """
-    扫描 defender_results/{first,second} 与 invader_results/{first,second} 下的 CSV，
-    返回 (model, role, tag, csv_path)
+    Traverse the results directory to find all per-model CSV files.
+
+    Expects structure:
+      root/defender_results/{first,second}/*.csv
+      root/invader_results/{first,second}/*.csv
+
+    Returns:
+        A list of tuples: (model_name, role, tag, csv_file_path)
     """
     items: List[Tuple[str, str, str, Path]] = []
     for role_dir in (root / "defender_results", root / "invader_results"):
@@ -110,8 +131,6 @@ def collect_csvs(root: Path) -> List[Tuple[str, str, str, Path]]:
     return items
 
 
-# -----------------------------------------------------------------------------  
-# main ------------------------------------------------------------------------  
 
 def main() -> None:
     script_dir = Path(__file__).parent
@@ -138,7 +157,6 @@ def main() -> None:
         print("[WARN] No CSV files found under", args.results_root)
         sys.exit(0)
 
-    # 仅按 model 聚合 defender/​invader 两个角色的平均值
     df_out = pd.DataFrame(rows).groupby("model", as_index=False).mean(numeric_only=True)
     df_out.to_csv(args.out_file, index=False, quoting=csv.QUOTE_NONNUMERIC)
     print("Auto‑battler:\n", df_out)

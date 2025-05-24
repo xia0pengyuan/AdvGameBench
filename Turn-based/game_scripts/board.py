@@ -16,7 +16,6 @@ class Board:
         
         self.left_start_x = (c.SCREEN_WIDTH - self.max_minions * (self.card_width + self.card_gap)) // 2
         
-        # 计算两队的 Y 坐标位置
         self.top_team_y = c.SCREEN_HEIGHT // 2 - self.middle_gap // 2 - self.card_height
         self.bottom_team_y = c.SCREEN_HEIGHT // 2 + self.middle_gap // 2
         
@@ -26,7 +25,6 @@ class Board:
     def draw(self, screen, font, current_attacker=None, current_target=None, 
              animation_in_progress=False, animation_step=0, animation_max_steps=0,
              attacker_team=None, defender_team=None):
-        # 绘制中间分割线
         pygame.draw.line(screen, c.BLACK, 
                          (0, c.SCREEN_HEIGHT // 2), 
                          (c.SCREEN_WIDTH, c.SCREEN_HEIGHT // 2), 
@@ -37,12 +35,10 @@ class Board:
             if [att for att in [current_attacker] if "Cleave" in getattr(att, "abilities", [])]:
                 is_cleave_attack = True
 
-        # 针对左侧队伍：如果是 Cleave 攻击，则计算当前目标在队伍中的索引
         target_index_left = None
         if animation_in_progress and current_target and current_target in self.team_left.minions:
             target_index_left = self.team_left.minions.index(current_target)
 
-        # 绘制左侧队伍
         for i, minion in enumerate(self.team_left.minions[:self.max_minions]):
             x = self.left_start_x + i * (self.card_width + self.card_gap)  
             y = self.top_team_y
@@ -61,17 +57,13 @@ class Board:
             
             rect = pygame.Rect(x + move_x, y + move_y, self.card_width, self.card_height)
             
-            # 默认背景色
             bg_color = (230, 230, 230)
-            # 根据是否为 Cleave 攻击采取不同的标红策略
             if animation_in_progress:
                 if is_cleave_attack:
-                    # Cleave 攻击：目标及左右相邻的随从标红
                     if target_index_left is not None:
                         if i in (target_index_left - 1, target_index_left, target_index_left + 1):
                             bg_color = c.RED
                 else:
-                    # 非 Cleave 攻击：只有被直接攻击的目标标红
                     if current_target is not None and minion == current_target:
                         bg_color = c.RED
             
@@ -90,15 +82,12 @@ class Board:
             atk_rect = atk_surface.get_rect(center=(rect.centerx, rect.centery + 25))
             screen.blit(atk_surface, atk_rect)
             
-            # 新增：显示护盾信息，如果随从拥有圣盾
             if minion.has_divine_shield():
                 shield_surface = font.render("Shield", True, c.BLUE)
-                # 将“Shield”文字显示在卡牌的右上角
                 shield_rect = shield_surface.get_rect()
                 shield_rect.topright = (rect.right - 5, rect.top + 5)
                 screen.blit(shield_surface, shield_rect)
         
-        # 针对右侧队伍：如果是 Cleave 攻击，则计算当前目标在队伍中的索引
         target_index_right = None
         if animation_in_progress and current_target and current_target in self.team_right.minions:
             target_index_right = self.team_right.minions.index(current_target)
@@ -146,7 +135,6 @@ class Board:
             atk_rect = atk_surface.get_rect(center=(rect.centerx, rect.centery))
             screen.blit(atk_surface, atk_rect)
             
-            # 新增：显示护盾信息
             if minion.has_divine_shield():
                 shield_surface = font.render("Shield", True, c.BLUE)
                 shield_rect = shield_surface.get_rect()
