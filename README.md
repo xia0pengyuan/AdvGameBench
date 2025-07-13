@@ -1,5 +1,5 @@
 # AdvGameBench
-![AdvGameBench 架构图](docs/image/advgame_page1.png)
+![AdvGameBench 架构图](docs/image/AdvGame.png)
 
 
 
