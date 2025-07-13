@@ -13,7 +13,7 @@
       height="25" />
   </a>
 
-<a href="https://huggingface.co/你的用户名/AdvGameBench" target="_blank">
+<a href="https://huggingface.co/spaces/xiaopengyuan/AdvGameBench" target="_blank">
   <img
     alt="🤗 AdvGameBench"
     src="https://img.shields.io/badge/🤗_Leaderboard-AdvGameBench-ffc107?color=ffc107"
