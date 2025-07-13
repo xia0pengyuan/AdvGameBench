@@ -29,11 +29,24 @@
   <h2>Install</h2>
   <pre><code>pip install -r requirements.txt</code></pre>
 
+  <h2>APIS</h2>
+  <p>The currently supported models are:</p>
+  <ul>
+    <li>chatgpt-4o</li>
+    <li>chatgpt-4.1</li>
+    <li>chatgpt-o3</li>
+    <li>chatgpt-o3-mini</li>
+    <li>deepSeek-V3</li>
+    <li>deepSeek-R1</li>
+    <li>qwen-plus</li>
+    <li>qwen-max</li>
+    <li>claude-3-5-sonnet</li>
+    <li>gemini-2-flash</li>
+    <li>gemini-2.5-flash</li>
+  </ul>
+
   <h2>Quick-start command</h2>
-  <pre><code># The currently supported models are:
-# chatgpt-4o, chatgpt-4.1, chatgpt-o3, chatgpt-o3-mini,
-# deepSeek-V3, deepSeek-R1, qwen-plus, qwen-max,
-# claude-3-5-sonnet, gemini-2-flash, gemini-2.5-flash
+  <pre><code>
 
 python run_all.py \
     --games "Tower_Defense" "Auto-battler" "Turn-based" \
@@ -50,3 +63,14 @@ CLAUDE_API_KEY="..."
 GEMINI_API_KEY="..."</code></pre>
 </body>
 </html>
+
+<h2>Citation</h2>
+<p>If you find this repository helpful, please kindly cite:</p>
+
+<pre><code>@article{yuan2025advgamebench,
+  title={Tracing LLM Reasoning Processes with Strategic Games: A Framework for Planning, Revision, and Resource-Constrained Decision Making},
+  author={Yuan, Xiaopeng and Zhang, Xingjian and Xu, Ke and Xu, Yifan and Yu, Lijun and Wang, Jindong and Dong, Yushun and Wang, Haohan},
+  journal={arXiv preprint arXiv:2506.12012},
+  year={2025}
+}
+</code></pre>
