@@ -3,6 +3,22 @@
 <body>
   <h1>AdvGameBench</h1>
   <img src="docs/image/AdvGame.png" alt="AdvGameBench Architecture Diagram" />
+
+  <p align="center">
+  <!-- arXiv 徽章 -->
+  <a href="https://arxiv.org/pdf/2506.12012" target="_blank">
+    <img
+      src="https://img.shields.io/badge/arXiv-2505.11277-E92D20?logo=arxiv&logoColor=white&style=flat-square"
+      alt="arXiv:2505.11277" />
+  </a>
+  <!-- Hugging Face 徽章 -->
+  <a href="https://huggingface.co/你的用户名/AdvGameBench" target="_blank">
+    <img
+      src="https://img.shields.io/badge/Hugging%20Face-AdvGameBench-FF9900?logo=Huggingface&logoColor=white&style=flat-square"
+      alt="Hugging Face: AdvGameBench" />
+  </a>
+</p>
+
   AdvGameBench is a benchmark that evaluates how LLMs make and revise decisions in strategic games, focusing not just on win rates but on the reasoning process behind those decisions.
 
   <h2>Why use AdvGameBench?</h2>
