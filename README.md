@@ -4,18 +4,21 @@
   <h1>AdvGameBench</h1>
   <img src="docs/image/AdvGame.png" alt="AdvGameBench Architecture Diagram" />
 
-  <p align="center">
+<p align="center">
   <!-- arXiv -->
   <a href="https://arxiv.org/pdf/2506.12012" target="_blank">
     <img
-      src="https://img.shields.io/badge/arXiv-2505.11277-E92D20?logo=arxiv&logoColor=white&style=flat-square"
-      alt="arXiv:2505.11277" />
+      src="https://img.shields.io/badge/arXiv-2506.12012-E92D20?logo=arxiv&logoColor=white&style=flat-square"
+      alt="arXiv:2506.12012"
+      height="25" />
   </a>
-  <!-- Hugging Face -->
+
+  <!-- Hugging Face-->
   <a href="https://huggingface.co/你的用户名/AdvGameBench" target="_blank">
     <img
-      src="https://img.shields.io/badge/Hugging%20Face-AdvGameBench-FF9900?logo=Huggingface&logoColor=ffc107"
-      alt="Hugging Face: AdvGameBench" />
+      alt="HF Model: AdvGameBench"
+      src="https://img.shields.io/badge/%F0%9F%A4%97%20_Model-AdvGameBench-ffc107?color=ffc107&logo=Huggingface&logoColor=white"
+      height="25" />
   </a>
 </p>
 
