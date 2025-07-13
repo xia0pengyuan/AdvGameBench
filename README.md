@@ -1,8 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>AdvGameBench</title>
+
 </head>
 <body>
   <h1>AdvGameBench</h1>
