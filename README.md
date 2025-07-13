@@ -13,13 +13,14 @@
       height="25" />
   </a>
 
-  <!-- Hugging Face logo only -->
-  <a href="https://huggingface.co/你的用户名/AdvGameBench" target="_blank">
-    <img
-      src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg"
-      alt="Hugging Face"
-      height="25" />
-  </a>
+  <!-- Hugging Face-->
+<a href="https://huggingface.co/你的用户名/AdvGameBench" target="_blank">
+  <img
+    alt="🤗 AdvGameBench"
+    src="https://img.shields.io/badge/🤗_Model-AdvGameBench-ffc107?color=ffc107"
+    height="25" />
+</a>
+</p>
 
   AdvGameBench is a benchmark that evaluates how LLMs make and revise decisions in strategic games, focusing not just on win rates but on the reasoning process behind those decisions.
 
