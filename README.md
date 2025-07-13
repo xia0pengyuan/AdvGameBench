@@ -15,7 +15,7 @@
 
   <a href="https://huggingface.co/你的用户名/AdvGameBench" target="_blank">
     <img
-      alt="HF Leaderboard: AdvGameBench"
+      alt="Leaderboard: AdvGameBench"
       src="https://img.shields.io/badge/%F0%9F%A4%97%20_Leaderboard-AdvGameBench-ffc107?color=ffc107&logo=Huggingface&logoColor=white"
       height="25" />
   </a>
