@@ -14,7 +14,7 @@
   <!-- Hugging Face -->
   <a href="https://huggingface.co/你的用户名/AdvGameBench" target="_blank">
     <img
-      src="https://img.shields.io/badge/Hugging%20Face-AdvGameBench-FF9900?logo=Huggingface&logoColor=ffc107&style=flat-square"
+      src="https://img.shields.io/badge/Hugging%20Face-AdvGameBench-FF9900?logo=Huggingface&logoColor=ffc107"
       alt="Hugging Face: AdvGameBench" />
   </a>
 </p>
