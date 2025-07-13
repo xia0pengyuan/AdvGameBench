@@ -1,7 +1,8 @@
-![AdvGameBench 架构图](docs/images/advgame_page1.png)
-
-
 # AdvGameBench
+![AdvGameBench 架构图](docs/image/advgame_page1.png)
+
+
+
 # install the exact package versions used in the paper
 pip install -r requirements.txt
 
