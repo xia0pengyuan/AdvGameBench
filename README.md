@@ -3,8 +3,10 @@
 <body>
   <h1>AdvGameBench</h1>
   <img src="docs/image/AdvGame.png" alt="AdvGameBench Architecture Diagram" />
+  AdvGameBench is a benchmark that evaluates how LLMs make and revise decisions in strategic games, focusing not just on win rates but on the reasoning process behind those decisions.
 
-  <h2>Why</h2>
+  <h2>Why use AdvGameBench?</h2>
+  Most benchmarks evaluate LLMs based only on final outcomes like accuracy or win rate, without considering how those results are produced. AdvGameBench addresses this limitation by placing models in closed-loop environments where they must plan, revise, and make decisions under constraints. By tracing not just what the model decides, but how and why it does so, AdvGameBench offers deeper insights into reasoning quality, reliability, and self-correction behavior.
 
   <h2>Install</h2>
   <pre><code>pip install -r requirements.txt</code></pre>
