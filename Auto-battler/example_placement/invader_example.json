@@ -1,28 +1,11 @@
 {
   "invaders": [
     {
-      "element": "Fire",
-      "skills": [
-        "flame_splash",
-        "residual_warmth",
-        "burst_flame_bomb"
-      ]
-    },
-    {
-      "element": "Dark",
-      "skills": [
-        "shadow_claw",
-        "soul_siphon",
-        "night_ambush"
-      ]
-    },
-    {
-      "element": "Water",
-      "skills": [
-        "stream_pierce",
-        "whirlpool_strangle",
-        "ice_branded"
-      ]
+      "name": "FireLizard",
+      "tier": "Bronze"
     }
+  ],
+  "target_priority_for_invaders": [
+    "RockBeetle"
   ]
 }

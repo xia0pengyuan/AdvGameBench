@@ -1,38 +1,38 @@
 import re
 import prompt as p
 
-def normalize_name(name: str) -> str:
-    return re.sub(r'[^0-9A-Za-z]+', '_', name).strip('_').lower()
-
-def extract_costs(text: str) -> dict[str, int]:
-    cost_dict: dict[str, int] = {}
-    pattern = re.compile(
-        r'^\s*[-\u2022]?\s*(?P<name>[^:]+?):.*?Cost\s*(?P<cost>\d+)\s*$',
-        re.IGNORECASE
-    )
-    for line in text.splitlines():
-        m = pattern.match(line)
+def extract_costs(info_text):
+    costs = {}
+    for line in info_text.strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        m = re.match(r"^(\w+)", line)
         if not m:
             continue
-        human_name = m.group('name').strip()
-        key = normalize_name(human_name)
-        cost = int(m.group('cost'))
-        cost_dict[key] = cost
-    return cost_dict
+        name = m.group(1).lower()
+        cm = re.search(r"cost\s*(\d+)", line)
+        if cm:
+            costs[name] = int(cm.group(1))
+    return costs
 
-def budget_calculator(map_data: dict) -> int:
-    total_cost = 0
-    invader_cost_map = extract_costs(p.invader)
-    defender_cost_map = extract_costs(p.defender)
+def budget_calculator(map_data):
+    total = 0
 
-    if "invaders" in map_data:
-        for unit in map_data["invaders"]:
-            for skill in unit.get("skills", []):
-                total_cost += invader_cost_map.get(skill, 0)
     if "defenders" in map_data:
-        for unit in map_data["defenders"]:
-            for skill in unit.get("skills", []):
-                total_cost += defender_cost_map.get(skill, 0)
+        cost_map = extract_costs(p.defender)
+        units = map_data["defenders"]
+    elif "invaders" in map_data:
+        cost_map = extract_costs(p.invader)
+        units = map_data["invaders"]
+    else:
+        return 0
 
-    return total_cost
+    for u in units:
+        name = u.get("name", "").lower()      
+        base = cost_map.get(name, 0)
+        if u.get("tier", "").lower() == "gold":
+            base *= 3
+        total += base
 
+    return total

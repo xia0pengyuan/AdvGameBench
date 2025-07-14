@@ -1,31 +1,65 @@
-rule = """1. Buy up to 7 characters at once; Gold cost triple, Attack/Health and numeric effects double; non‑numeric unaffected; in JSON use property tier with value Gold
-2. Initiative goes to side with more characters; tie gives Invader priority
-3. Elemental cycle is Fire > Nature > Water > Earth > Fire
-4. Battle proceeds with initiative first, alternating left‑to‑right attacks; must target Taunt if present; follow target priority if available, otherwise attack left‑to‑right; remove units at zero HP; repeat until one side is eliminated.
-5. Full elimination causes that side to lose; simultaneous elimination gives Invader the win
-6. If a character’s 'tier' property is absent, default its tier to "Bronze"."""
+rule = """
+1. Turn-based battle between Invaders (Fire, Water, Dark) and Defenders (Wood, Earth, Light). Each side has three characters acting 
+in the listed order: Invaders first, then Defenders, then repeat.
+2. Each character has three skills. On their turn, they may freely choose any skill — no fixed cycle, and the same skill can be used repeatedly.
+3. Elemental chart:
+   • Fire > Wood, Wood > Earth, Earth > Water, Water > Fire (×1.2 damage when effective, ×0.8 when resisted)
+   • Light ↔ Dark counter (×1.5)
+   • All other matchups deal ×1.0
+4. A side wins when all opposing characters are eliminated.
+"""
 
-invader = """FireLizard (atk2 hp2 cost1) with Deathrattle that deals 2 damage to its killer
-WaterElemental (atk2 hp2 cost1) gains +1 Attack when attacking
-PoisonFrog (atk1 hp1 cost2) destroys any minion it damages
-MoltenHound (atk3 hp1 cost2) with Deathrattle that deals 1 damage to all enemies
-BattleFrenzy (atk7 hp4 cost2) loses 4 Attack after each attack
-BanditLeader (atk8 hp3 cost3) carries excess damage to the next target
-LavaGolem (atk1 hp8 cost3) has Taunt and burns its attacker for 3 damage per turn
-TideGuardian (atk4 hp2 cost3) has Divine Shield and attacks twice
-TideLord (atk4 hp10 cost4) doubles Attack when damaged
-Phoenix (atk5 hp5 cost4) deals splash damage to adjacent units and revives once
-ShadowOverlord (atk4 hp4 cost4) summons a 3/1 Skeleton on death"""
+invader = """
+Fire skills:
+- Flame Splash: 12 dmg + 1 Burning layer (5 dmg/round) for 2 rounds. Cost 1
+- Residual Warmth: +30% next fire skill for 1 round. Cost 1
+- Burst Flame Bomb: 25 base dmg + 4 per Burning layer. Cost 2
+- Flame Whirlwind: 5 Burning layers (5 dmg/round) for 3 rounds. Cost 3
+- Magma Eruption: 50 base dmg + 8 per Burning layer; clears all Burning layers. Cost 4
+- Hell Curtain: 45 dmg + shield that reflects 50 melee dmg for 3 rounds. Cost 5
 
-defender = """Sapling (atk2 hp2 cost1) gains 1 Health when attacking
-RockBeetle (atk1 hp5 cost1) has Taunt
-ForestSeer (atk1 hp2 cost2) gives Nature allies 1 Attack and 1 Health at game start
-StoneWarrior (atk2 hp5 cost2) has Taunt and summons a RockBeetle on death
-EliteSoldier (atk1 hp1 cost2) grants adjacent units Divine Shield and +1 Attack at game start
-Paladin (atk3 hp6 cost3) has Divine Shield and gains 2 Attack when a friendly unit loses Divine Shield
-BlackRock (atk2 hp1 cost3) gains 3 Health per friendly unit at game start
-VineProtector (atk3 hp4 cost3) restores 2 Health to all friendly units on death
-King (atk3 hp12 cost4) summons a 1/1 Divine Shield Soldier when attacking if space is open
-MountainGiant (atk4 hp9 cost4) has Taunt and reduces an attacker’s Attack by 2 when hit
-AncientTreant (atk2 hp3 cost4) grants all allies 2 Attack and 2 Health at game start"""
+Water skills:
+- Stream Pierce: 10 dmg + 1 permanent Tidal Surge layer. Cost 1
+- Water Barrier: 5‑point shield for 3 rounds + 1 Tidal Surge layer. Cost 1
+- Whirlpool Strangle: 20 base dmg + 6 per Tidal Surge layer. Cost 2
+- Ice Branded: 20 dmg & target takes +60% dmg next turn. Cost 3
+- Tsunami Ending: 40 base dmg + 8 per Tidal Surge layer; clears all Tidal Surge layers. Cost 4
+- Abyss Resonance: 5 dmg per Tidal Surge layer + shield worth 10 per layer for 4 rounds. Cost 5
+
+Dark skills:
+- Shadow Claw: 14 dmg & heal 30% of dmg dealt. Cost 1
+- Fear Whisper: −10% dmg taken for 3 rounds. Cost 1
+- Soul Siphon: 30 dmg (+25 if target <50% HP). Cost 2
+- Night Ambush: 25 dmg & target takes +25% dmg next turn. Cost 3
+- Final Announcement: 55 base dmg + 8 per 10% HP lost. Cost 4
+- Void Assimilation: Sacrifice 25% current HP to deal true dmg = 250% of HP consumed. Cost 5
+"""
+
+defender = """
+Wood skills:
+- Bud Healing: Heal 7 HP/round for 3 rounds. Cost 1
+- Parasitic Seed: 10 dmg now + target takes 5 counter dmg when attacking (3 rounds). Cost 1
+- Life Totem: Heal 30 HP + +15% healing received for 3 rounds. Cost 2
+- Natural Purification: Remove all debuffs + deal 40 dmg. Cost 3
+- Forest Reincarnation: Heal 80 HP; excess → 60% shield for 3 rounds + deal 30 dmg. Cost 4
+- Poison Vine: 35 dmg/round for 4 rounds. Cost 5
+
+Earth skills:
+- Rock Armor: 12 shield for 3 rounds + reflect 8 melee dmg. Cost 1
+- Earth Shock: 20 dmg. Cost 1
+- Granite Barrier: −45% dmg taken for 3 rounds. Cost 2
+- Quicksand Trap: Delay next 4 incoming dmg by 25% and deal 15 back each trigger (3 rounds). Cost 3
+- Earth Pulse: Shield = 10 per 10% HP lost; also deal 10 dmg per layer (permanent). Cost 4
+- Core Rebound: Deal 120% of stored dmg; clears store. Cost 5
+
+Light skills:
+- Holy Glimmer: Remove one debuff + heal 9 HP + deal 9 dmg. Cost 1
+- Faith Emblem: Next dmg taken −20% and converted to healing; reflects 10 dmg once. Cost 1
+- Divine Link: Reflect next instance of dmg back to attacker. Cost 2
+- Luminous Dispel: Remove one buff + −20% attack for 2 rounds. Cost 3
+- Angelic Sanctuary: −40 incoming dmg (flat) for 3 rounds. Cost 4
+- Divine Sword: 35 dmg + +30% next skill dmg. Cost 5
+"""
+
+
 

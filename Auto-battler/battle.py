@@ -36,50 +36,31 @@ MODEL_CALLERS = {
 
 def parse_code(rsp):
     pattern = r'```json(.*)```'
-    match   = re.search(pattern, rsp, re.DOTALL)
+    match = re.search(pattern, rsp, re.DOTALL)
     code_text = match.group(1) if match else rsp
-
     code_text = code_text.strip()
-
-    if ((code_text.startswith('"') and code_text.endswith('"')) or
-        (code_text.startswith("'") and code_text.endswith("'"))):
+    if (code_text.startswith('"') and code_text.endswith('"')) or (code_text.startswith("'") and code_text.endswith("'")):
         code_text = code_text[1:-1].strip()
-
     code_text = code_text.replace('\\n', '\n')
-
     if "'" in code_text and '"' not in code_text:
         code_text = code_text.replace("'", '"')
-
-    if code_text.rstrip().endswith('}}'):
-        code_text = code_text.rstrip()[:-1]
-    code_text = re.sub(r'["\']\s*}$', '}', code_text)
-
-
     parsed = json.loads(code_text)
-
     data = json.dumps(parsed, separators=(',', ':'), ensure_ascii=False)
     return json.loads(data)
 
-def run_game_script(human_data, demon_data):
-    """
-    Invoke the external game engine script (main.py) with JSON args.
+def run_game_script(defender_data, invader_data):
 
-    Args:
-      human_data: dict   – Defender’s current placement
-      demon_data: dict   – Invader’s current placement
-
-    Returns:
-      The last line of stdout, which should start with "Defenders" or "Invaders".
-    """
-
-    if not os.path.exists(os.path.join(BASE_DIR, "game_scripts", "main.py")):
-        print("Game script main.py does not exist.")
+    if not os.path.exists(os.path.join(BASE_DIR, "game_scripts", "run.py")):
+        print("Game script run.py does not exist.")
         sys.exit(1)
     try:
-        result = subprocess.run(["python", os.path.join(BASE_DIR, "game_scripts", "main.py"),json.dumps(human_data),json.dumps(demon_data)], check=True, capture_output=True, text=True)
+        result = subprocess.run([
+            "python", os.path.join(BASE_DIR, "game_scripts", "run.py"),
+            json.dumps(defender_data), json.dumps(invader_data)
+        ], check=True, capture_output=True, text=True)
         output = result.stdout.strip()
-        lines = output.splitlines()  
-        result = lines[-1]  
+        lines = output.splitlines()
+        result = lines[-1]
 
     except subprocess.CalledProcessError as e:
         print(f"Error occurred while running the game script: {e}")
@@ -96,23 +77,45 @@ def call_model(model_name, prompt):
     except KeyError:
         raise ValueError(f"Unknown model: {model_name}")
     #print(f"[Calling] {model_name}")
-    
+
     return parse_code(caller(prompt))
 
 def make_prompt(side, last_json, opp_json, result, budget, cost):
-    """
-    Build the text prompt for the LLM each round.
-
-    Includes:
-      - Side (“Defender” or “Invader”)
-      - Last round’s outcome, cost, and remaining budget
-      - Game rules and unit catalogs
-      - Opponent’s and own previous JSON placements
-
-    Instructs the LLM to output a single JSON object under key “defenders” or “invaders”.
-    """
     defender_catalogue = p.defender
     invader_catalogue = p.invader
+
+    opp_defender_catalogue = describe_defenders(opp_json)
+    opp_invader_catalogue = describe_invaders(opp_json)
+
+    return f"""
+    You are playing as the {side} in this game.
+    Last round result: {result}
+    Your cost was {cost}, budget is {budget}.
+    if you exceed your budget, you will lose the match.
+
+    Game Rules:
+    {p.rule}
+
+    Your unit catalogue:
+    {defender_catalogue if side=='Defender' else invader_catalogue}
+
+    Opponent unit catalogue:
+    {opp_defender_catalogue if side=='Invader' else opp_invader_catalogue}
+
+    Opponent JSON:
+    {json.dumps(opp_json, ensure_ascii=False)}
+
+    Your previous {side.lower()} JSON:
+    {json.dumps(last_json, ensure_ascii=False)}
+
+    Goal:
+    Regenerate and return a single JSON object with the key  **{side.lower()}s**
+    so that you maximize the chance of winning. Do not include any other text.
+    """
+
+def make_prompt(side, last_json, opp_json, result, budget, cost):
+    defender_catalogue = describe_defenders(last_json)
+    invader_catalogue = describe_invaders(last_json)
 
     opp_defender_catalogue = describe_defenders(opp_json)
     opp_invader_catalogue = describe_invaders(opp_json)
@@ -132,14 +135,14 @@ def make_prompt(side, last_json, opp_json, result, budget, cost):
     Opponent unit catalogue:
     {opp_defender_catalogue if side=='Invader' else opp_invader_catalogue}
 
-    Opponent JSON:
-    {json.dumps(opp_json, ensure_ascii=False)}
-
     Your previous {side.lower()} JSON:
     {json.dumps(last_json, ensure_ascii=False)}
 
+    Opponent JSON:
+    {json.dumps(opp_json, ensure_ascii=False)}
+
     Goal:
-    Regenerate and return a single JSON object with the key **{side.lower()}s**
+    Regenerate and return a single JSON object with the key "{side.lower()}s"
     so that you maximize the chance of winning. Do not include any other text.
     """
 
@@ -175,22 +178,7 @@ def main_loop(
     defender_first: bool = True,
     test_role: str = "defender",
 ) -> pd.DataFrame:
-    """
-    Run a full match of multiple rounds between two LLMs.
-
-    Args:
-      defender_LLM:   model name for Defender
-      invader_LLM:    model name for Invader
-      defender_budget: int budget for Defender
-      invader_budget: int budget for Invader
-      tag:            str to label output directory (“first”/“second”)
-      rounds:         number of update rounds
-      defender_first: whether Defender acts first each round
-      test_role:      which side we’re evaluating (“defender” or “invader”)
-
-    Returns:
-      DataFrame with one row per round recording costs, winner, and model names.
-    """
+    
     path_model = defender_LLM if test_role.lower() == "defender" else invader_LLM
     test_model = invader_LLM if test_role.lower() == "defender" else defender_LLM
 
@@ -198,9 +186,7 @@ def main_loop(
         fname = f"{model.replace('/', '-')}_{role}.json"
         path = os.path.join(os.path.dirname(__file__),
                             'initial_placements', fname)
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Missing init file: {path}")
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
 
     defender_json = _load_json("defender", defender_LLM)
@@ -290,9 +276,8 @@ def main_loop(
 
     return pd.DataFrame(records)
     
-    
 if __name__ == "__main__":
-
+    
     defender_budget = 20
     invader_budget = 20
 

@@ -1,28 +1,11 @@
 {
   "defenders": [
     {
-      "element": "Wood",
-      "skills": [
-        "bud_healing",
-        "parasitic_seed",
-        "life_totem"
-      ]
-    },
-    {
-      "element": "Earth",
-      "skills": [
-        "rock_armor",
-        "earth_shock",
-        "granite_barrier"
-      ]
-    },
-    {
-      "element": "Light",
-      "skills": [
-        "holy_glimmer",
-        "faith_emblem",
-        "divine_link"
-      ]
+      "name": "RockBeetle",
+      "tier": "Bronze"
     }
+  ],
+    "target_priority_for_defenders": [
+    "FireLizard"
   ]
 }

@@ -28,7 +28,6 @@ EXAMPLE_DIR = os.path.join(BASE_DIR, 'example_placement')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'initial_placements')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Mapping model names to caller functions
 MODEL_CALLERS = {
     'chatgpt-o3':        llms.call_chatgpt_o3_api,
     'chatgpt-4o':        llms.call_chatgpt_4o_api,
@@ -41,32 +40,20 @@ MODEL_CALLERS = {
     'chatgpt-4.1':       llms.call_chatgpt_41_api,
     'gemini-2-flash':    llms.call_gemini_2_flash_api,
     'gemini-2.5-flash':  llms.call_gemini_2_5_flash_api,
-    'llama-3-70B':       llms.call_meta_llama_70B_api,
+    'llama-3-70B':       llms.call_meta_llama_70B_api
 }
 
 def parse_code(rsp):
     pattern = r'```json(.*)```'
-    match   = re.search(pattern, rsp, re.DOTALL)
+    match = re.search(pattern, rsp, re.DOTALL)
     code_text = match.group(1) if match else rsp
-
     code_text = code_text.strip()
-
-    if ((code_text.startswith('"') and code_text.endswith('"')) or
-        (code_text.startswith("'") and code_text.endswith("'"))):
+    if (code_text.startswith('"') and code_text.endswith('"')) or (code_text.startswith("'") and code_text.endswith("'")):
         code_text = code_text[1:-1].strip()
-
     code_text = code_text.replace('\\n', '\n')
-
     if "'" in code_text and '"' not in code_text:
         code_text = code_text.replace("'", '"')
-
-    if code_text.rstrip().endswith('}}'):
-        code_text = code_text.rstrip()[:-1]
-    code_text = re.sub(r'["\']\s*}$', '}', code_text)
-
-
     parsed = json.loads(code_text)
-
     data = json.dumps(parsed, separators=(',', ':'), ensure_ascii=False)
     return json.loads(data)
 
@@ -75,12 +62,17 @@ def call_model(model_name, prompt_text):
         raise ValueError(f"Unknown model: {model_name}")
     return parse_code(MODEL_CALLERS[model_name](prompt_text))
 
+def load_example(side: str) -> dict:
+    """
+    Load example JSON for 'defender' or 'invader'.
+    """
+    path = os.path.join(EXAMPLE_DIR, f'{side.lower()}_example.json')
+    with open(path, encoding='utf-8') as f:
+        return json.load(f)
 
-def generate_initial_placement(model: str, side: str, example: dict, budget: int, retries: int = 3) -> dict:
-    """
-    Generate a placement JSON for given side, retrying if cost > budget.
-    """
-    prompt_template = f"""
+def generate_initial_placement(model, side, example_json, budget, max_retries=3):
+
+    base_prompt = f"""
 You are the {side} side.
 Your task is to purchase characters/units and arrange them to maximize your chances of winning.
 Your total budget for {side.lower()} is {budget}.
@@ -92,30 +84,29 @@ Game Rules:
 {getattr(p, side.lower())}
 
 Example {side} JSON:
-{json.dumps(example, ensure_ascii=False)}
+{json.dumps(example_json, ensure_ascii=False)}
 
 Important: your output must be a single JSON object with the key "{side.lower()}s" and must not include any other text or explanation.
 """
-    feedback = ''
-    for attempt in range(1, retries + 1):
-        full_prompt = prompt_template + ('\n' + feedback if feedback else '')
-        placement = call_model(model, full_prompt)   
+    feedback = ""
+    for attempt in range(1, max_retries + 1):
+        prompt_text = base_prompt + ("\n" + feedback if feedback else "")
+        placement = call_model(model, prompt_text)
         cost = budget_calculator(placement)
+
         if cost <= budget:
             return placement
-        feedback = (f'[Attempt {attempt}] cost {cost} > budget {budget}. '
-                    f'Adjust layout. Previous output:\n{json.dumps(placement, indent=2)}')
+
+        warning = (
+            f"[Warning] Attempt {attempt}: generated placement cost {cost} which exceeds "
+            f"the budget of {budget}.\n"
+        )
+        feedback = warning + (
+            "Please adjust your layout to meet the budget constraints. "
+            "Previous placement:\n" + json.dumps(placement, ensure_ascii=False, indent=2)
+        )
+
     return placement
-
-
-def load_example(side: str) -> dict:
-    """
-    Load example JSON for 'defender' or 'invader'.
-    """
-    path = os.path.join(EXAMPLE_DIR, f'{side.lower()}_example.json')
-    with open(path, encoding='utf-8') as f:
-        return json.load(f)
-
 
 def main():
     defender_example = load_example('defender')
@@ -133,6 +124,9 @@ def main():
         with open(inv_file, 'w', encoding='utf-8') as f:
             json.dump(inv_pl, f, ensure_ascii=False, indent=2)
 
+        #print(f'[Saved] {model}: Defender -> {def_file}, Invader -> {inv_file}')
+
+    #print('[Done] All initial placements generated.')
 
 
 if __name__ == '__main__':
