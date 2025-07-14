@@ -2,7 +2,7 @@ import json
 import re
 import os
 import pandas as pd
-import LLMs as llms
+import src.advgamebench.core.LLMs as llms
 import prompt as p
 
 BASE_DIR = os.path.dirname(__file__)

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "advgamebench"                   
+version = "0.1.0"                       
+description = "Benchmark framework revealing LLM strategic reasoning in games"
+authors = [{name = "Xiaopeng Yuan", email = "you@example.com"}]
+requires-python = ">=3.9"
+dependencies = [                        
+  "numpy",
+  "pandas",
+  "tqdm",
+]
+
+[project.scripts]
+advgamebench = "advgamebench.cli:main" 

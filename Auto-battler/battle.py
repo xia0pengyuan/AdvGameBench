@@ -4,7 +4,7 @@ import prompt as p
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pandas as pd
-import LLMs as llms
+import src.advgamebench.core.LLMs as llms
 import json
 from calculator import budget_calculator
 from extract_information import describe_defenders, describe_invaders

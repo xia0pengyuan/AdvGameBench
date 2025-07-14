@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import prompt as p
 from calculator import budget_calculator
-import LLMs as llms
+import src.advgamebench.core.LLMs as llms
 
 # Load model lists from environment
 primary_models = json.loads(os.getenv('MODELS', '[]'))
