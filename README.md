@@ -27,6 +27,7 @@
   Most benchmarks evaluate LLMs based only on final outcomes like accuracy or win rate, without considering how those results are produced. AdvGameBench addresses this limitation by placing models in closed-loop environments where they must plan, revise, and make decisions under constraints. By tracing not just what the model decides, but how and why it does so, AdvGameBench offers deeper insights into reasoning quality, reliability, and self-correction behavior.
 
   <h2>Install</h2>
+  <h3>Method 1: With pip</h3>
   <pre><code>pip install -r requirements.txt</code></pre>
 
   <h2>APIS</h2>
